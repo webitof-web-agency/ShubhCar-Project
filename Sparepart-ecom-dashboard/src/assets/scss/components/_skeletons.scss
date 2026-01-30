@@ -1,0 +1,112 @@
+:root {
+  --skeleton-base: #eef1f6;
+  --skeleton-shine: #f8fafc;
+  --skeleton-radius: 12px;
+  --skeleton-duration: 1.4s;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+  border-radius: var(--skeleton-radius);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  animation: skeleton-shimmer var(--skeleton-duration) infinite;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.skeleton-title {
+  height: 18px;
+  border-radius: 10px;
+}
+
+.skeleton-block {
+  height: 38px;
+  border-radius: 12px;
+}
+
+.skeleton-card {
+  height: 140px;
+  border-radius: 16px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.skeleton-chip {
+  height: 26px;
+  border-radius: 999px;
+}
+
+.placeholder {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base) !important;
+  opacity: 1 !important;
+  border-radius: var(--skeleton-radius);
+}
+
+.placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  animation: skeleton-shimmer var(--skeleton-duration) infinite;
+}
+
+.spinner-border,
+.spinner-grow {
+  border: 0 !important;
+  width: 140px !important;
+  height: 10px !important;
+  border-radius: 999px !important;
+  background: var(--skeleton-base) !important;
+  position: relative;
+  overflow: hidden;
+  animation: none !important;
+}
+
+.spinner-border::after,
+.spinner-grow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  animation: skeleton-shimmer var(--skeleton-duration) infinite;
+}
+
+.spinner-border-sm,
+.spinner-grow-sm {
+  width: 90px !important;
+  height: 8px !important;
+}
+
+.text-center .spinner-border ~ p,
+.text-center .spinner-grow ~ p {
+  display: none;
+}

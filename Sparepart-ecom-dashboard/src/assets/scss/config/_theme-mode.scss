@@ -1,0 +1,81 @@
+// 
+// _light-mode.scss
+// 
+
+
+/* Root Prefix Variable */
+:root {
+    --#{$prefix}logo-lg-height: 24px;
+    --#{$prefix}logo-sm-height: 26px;
+
+    --#{$prefix}main-nav-width: 260px;
+    --#{$prefix}main-nav-width-sm: 72px;
+    --#{$prefix}main-nav-item-icon-size: 20px;
+    --#{$prefix}main-nav-item-font-size: 14px;
+    --#{$prefix}main-nav-item-padding-x: 20px;
+    --#{$prefix}main-nav-item-padding-y: 12px;
+
+    --#{$prefix}topbar-height: 80px;
+    --#{$prefix}footer-height: 64px;
+
+    // Heading Variable
+    --#{$prefix}headings-color: #0f172a;
+
+    --#{$prefix}input-border-color: #cbd5e1; // slate-300
+    --#{$prefix}input-focus-border-color: #5955D2; // primary
+}
+
+
+/* Color system - Dark Mode only */
+html[data-bs-theme="dark"],
+[data-bs-theme="dark"] {
+
+    --#{$prefix}border-color: #334155; // slate-700
+
+    --#{$prefix}light: #{$body-tertiary-bg-dark};
+    --#{$prefix}dark: #{$body-tertiary-color-dark};
+
+    --#{$prefix}light-rgb: #{to-rgb($body-tertiary-bg-dark)};
+    --#{$prefix}dark-rgb: #{to-rgb($body-tertiary-color-dark)};
+
+    // Heading Variable
+    --#{$prefix}headings-color: #f1f5f9; // slate-100
+
+    --#{$prefix}input-border-color: #334155; // slate-700
+    --#{$prefix}input-focus-border-color: #8F8BE8; // primary-light
+}
+
+
+/* Main Menu Light */
+html[data-menu-color="light"] {
+    --#{$prefix}main-nav-bg: #ffffff;
+    --#{$prefix}main-nav-item-color: #475569; // slate-600
+    --#{$prefix}main-nav-item-hover-bg: rgba(89, 85, 210, 0.08); // primary with opacity
+    --#{$prefix}main-nav-item-hover-color: #5955D2; // primary
+    --#{$prefix}main-nav-border-color: #e2e8f0; // slate-200
+}
+
+/* Main Menu Dark */
+html[data-menu-color="dark"],
+html[data-bs-theme="dark"][data-menu-color="light"] {
+    --#{$prefix}main-nav-bg: #0f172a; // slate-900
+    --#{$prefix}main-nav-item-color: #94a3b8; // slate-400
+    --#{$prefix}main-nav-item-hover-bg: rgba(255, 255, 255, 0.05);
+    --#{$prefix}main-nav-item-hover-color: #f8fafc; // slate-50
+    --#{$prefix}main-nav-border-color: #1e293b; // slate-800
+}
+
+/* Topbar Light */
+html[data-topbar-color="light"] {
+    --#{$prefix}topbar-bg: #ffffff;
+    --#{$prefix}topbar-item-color: #334155; // slate-700
+    --#{$prefix}topbar-search-bg: #f1f5f9; // slate-100
+}
+
+/* Topbar Dark */
+html[data-topbar-color="dark"],
+html[data-bs-theme="dark"][data-topbar-color="light"] {
+    --#{$prefix}topbar-bg: #0f172a; // slate-900
+    --#{$prefix}topbar-item-color: #e2e8f0; // slate-200
+    --#{$prefix}topbar-search-bg: #1e293b; // slate-800
+}

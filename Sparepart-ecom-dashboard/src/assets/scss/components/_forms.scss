@@ -1,0 +1,152 @@
+//
+// forms.scss
+//
+
+
+// Forms
+label {
+    font-weight: $font-weight-medium;
+}
+
+.form-check {
+
+    .form-check-input,
+    label {
+        cursor: pointer;
+
+    }
+}
+
+// Form elements (Color and Range)
+input.form-control[type="color"],
+input.form-control[type="range"] {
+    min-height: 39px;
+}
+
+
+// Search box
+.search-bar {
+    position: relative;
+
+    .form-control {
+        padding-left: 40px;
+        padding-right: 20px;
+    }
+
+    span {
+        position: absolute;
+        z-index: 10;
+        font-size: 16px;
+        top: 10px;
+        left: 13px;
+        color: $text-muted;
+    }
+}
+
+// checkbox
+.form-check-input {
+    margin-top: 0.125rem;
+
+    &:focus {
+        box-shadow: none;
+    }
+}
+
+// Color Checkbox and Radio
+@each $color,
+$value in $theme-colors {
+
+    .form-checkbox-#{$color},
+    .form-radio-#{$color} {
+        .form-check-input {
+            &:checked {
+                background-color: $value;
+                border-color: $value;
+            }
+        }
+    }
+}
+
+.form-todo {
+    input[type="checkbox"]:checked+label {
+        text-decoration: line-through;
+    }
+}
+
+// Adaptive Floating Label
+.form-floating {
+
+    >.form-control,
+    >.form-select {
+        height: 48px;
+        min-height: 48px;
+        padding: 0.75rem 0.75rem;
+        border: 1px solid var(--#{$prefix}border-color);
+        box-shadow: none !important;
+        line-height: 1.5;
+
+        &:focus {
+            border-color: $primary;
+        }
+
+        &::placeholder {
+            color: transparent;
+        }
+
+        // Override Bootstrap's floating label padding shift to keep text centered
+        &:focus,
+        &:not(:placeholder-shown) {
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+        }
+    }
+
+    >label {
+        position: absolute;
+        top: 0;
+        left: 0.75rem;
+        height: 100%;
+        padding: 0.75rem 0.5rem;
+        pointer-events: none;
+        border: 1px solid transparent;
+        transform-origin: 0 0;
+        transition: opacity .1s ease-in-out, transform .1s ease-in-out;
+        width: auto;
+        max-width: 100%;
+        color: var(--#{$prefix}secondary-color);
+
+        &::after {
+            display: none !important;
+        }
+    }
+
+    >.form-control:focus~label,
+    >.form-control:not(:placeholder-shown)~label,
+    >.form-select~label {
+        opacity: 1;
+        transform: translateY(-50%) scale(0.85);
+        background-color: var(--#{$prefix}body-bg);
+        height: auto;
+        padding: 0 0.4rem;
+        color: $primary;
+        top: 0;
+        z-index: 5;
+    }
+
+    .card &>.form-control:focus~label,
+    .card &>.form-control:not(:placeholder-shown)~label,
+    .card &>.form-select~label {
+        background-color: var(--#{$prefix}card-bg, #fff);
+    }
+}
+
+// Disable Autofill Background
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: var(--#{$prefix}body-color) !important;
+    transition: background-color 5000s ease-in-out 0s;
+    box-shadow: inset 0 0 20px 20px transparent !important;
+}
