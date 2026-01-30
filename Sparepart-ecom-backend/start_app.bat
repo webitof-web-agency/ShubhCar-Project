@@ -1,0 +1,9 @@
+@echo off
+echo Stopping existing containers...
+docker-compose down --remove-orphans
+
+echo Building and starting services...
+docker-compose up --build -d
+
+echo Services started! Tailing logs...
+docker-compose logs -f

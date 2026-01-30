@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spareparts-api
+  labels:
+    app: spareparts-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spareparts-api
+  template:
+    metadata:
+      labels:
+        app: spareparts-api
+    spec:
+      containers:
+        - name: api
+          image: spareparts-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: PORT
+              value: "8081"
+            - name: NODE_ENV
+              value: "production"
+            # Populate these from Secrets
+            - name: MONGO_REPLICA_URI
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: mongo-replica-uri
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: jwt-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: jwt-refresh-secret
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: stripe-secret
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: stripe-webhook
+            - name: RAZORPAY_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: razorpay-key-id
+            - name: RAZORPAY_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: razorpay-key-secret
+            - name: RAZORPAY_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: razorpay-webhook-secret
+            - name: METRICS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: metrics-token
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20

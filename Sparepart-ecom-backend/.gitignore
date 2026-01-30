@@ -1,0 +1,12 @@
+/.env
+/coverage
+/flattened
+/merge
+/node_modules
+/logs
+/npm-debug.log
+/Dockerfile
+/docker-compose.yml
+/1Zip*
+/Login_Details.text
+.zip
