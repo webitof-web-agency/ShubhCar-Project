@@ -1,10 +1,14 @@
 'use client'
 import PageTItle from '@/components/PageTItle'
-import { Card, CardBody, Col, Row, Spinner, Table, Button, Form, Modal } from 'react-bootstrap'
+import { Card, CardBody, Col, Row, Spinner, Button } from 'react-bootstrap'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import DataTable from '@/components/shared/DataTable'
+import CRUDModal from '@/components/shared/CRUDModal'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import useAPI from '@/hooks/useAPI'
 
 const VehicleVariantsPage = () => {
   const { data: session } = useSession()
@@ -14,10 +18,35 @@ const VehicleVariantsPage = () => {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
-  const [newItem, setNewItem] = useState({ modelYearId: '', name: '', status: 'active' })
+  const [error, setError] = useState(null)
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+
+  // useAPI hook for DELETE operation
+  const { execute: deleteVariant, loading: deleting } = useAPI(
+    (id) => fetch(`${API_BASE_URL}/vehicle-variants/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session?.accessToken}` }
+    }).then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to delete'))),
+    { showSuccessToast: true, successMessage: 'Variant deleted successfully!' }
+  )
+
+  // useAPI hook for POST/PUT operation
+  const { execute: saveVariant, loading: submitting } = useAPI(
+    (formData, id) => {
+      const url = id ? `${API_BASE_URL}/vehicle-variants/${id}` : `${API_BASE_URL}/vehicle-variants`
+      return fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      }).then(res => res.ok ? res.json() : res.json().then(err => Promise.reject(new Error(err.message || 'Failed to save'))))
+    },
+    { showSuccessToast: true, successMessage: 'Variant saved successfully!' }
+  )
 
   const modelMap = useMemo(() => {
     const map = new Map()
@@ -81,47 +110,21 @@ const VehicleVariantsPage = () => {
   }, [session])
 
   const handleOpenModal = (item = null) => {
-    if (item) {
-      setEditingItem(item)
-      setNewItem({ modelYearId: item.modelYearId, name: item.name, status: item.status || 'active' })
-    } else {
-      setEditingItem(null)
-      setNewItem({ modelYearId: '', name: '', status: 'active' })
-    }
+    setEditingItem(item)
+    setError(null)
     setShowModal(true)
   }
 
-  const handleSave = async () => {
+  const handleSubmit = async (formData) => {
     if (!session?.accessToken) return
-    if (!newItem.modelYearId || !newItem.name) {
-      alert('Please select a model year and enter variant name')
-      return
-    }
     try {
-      const url = editingItem
-        ? `${API_BASE_URL}/vehicle-variants/${editingItem._id}`
-        : `${API_BASE_URL}/vehicle-variants`
-
-      const response = await fetch(url, {
-        method: editingItem ? 'PUT' : 'POST',
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newItem),
-      })
-
-      if (response.ok) {
-        setShowModal(false)
-        setEditingItem(null)
-        setNewItem({ modelYearId: '', name: '', status: 'active' })
-        fetchVariants()
-      } else {
-        alert('Failed to save')
-      }
+      await saveVariant(formData, editingItem?._id)
+      setShowModal(false)
+      setEditingItem(null)
+      fetchVariants()
     } catch (error) {
-      console.error(error)
-      alert('Failed to save')
+      console.error('Save failed:', error)
+      setError(error.message || 'Failed to save')
     }
   }
 
@@ -133,26 +136,13 @@ const VehicleVariantsPage = () => {
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/vehicle-variants/${deletingId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
-      )
-
-      if (response.ok) {
-        fetchVariants()
-        setShowDeleteModal(false)
-        setDeletingId(null)
-      } else {
-        alert('Failed to delete')
-      }
+      await deleteVariant(deletingId)
+      fetchVariants()
+      setShowDeleteModal(false)
+      setDeletingId(null)
     } catch (error) {
-      console.error(error)
-      alert('Failed to delete')
+      console.error('Delete failed:', error)
+      // Error toast already shown by useAPI
     }
   }
 
@@ -175,121 +165,81 @@ const VehicleVariantsPage = () => {
               <div className="d-flex justify-content-end mb-3">
                 <Button variant="primary" onClick={() => handleOpenModal()}>Add Variant</Button>
               </div>
-              <div className="table-responsive">
-                <Table hover responsive className="table-nowrap mb-0 align-middle">
-                  <thead>
-                    <tr>
-                      <th>Model Year</th>
-                      <th>Variant</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {variants.map((item) => (
-                      <tr key={item._id}>
-                        <td>{formatModelYear(item.modelYearId)}</td>
-                        <td>{item.name}</td>
-                        <td>
-                          <span className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active'
-                            ? 'bg-success-subtle text-success'
-                            : 'bg-danger-subtle text-danger'
-                            }`}>
-                            {item.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0 text-primary"
-                              onClick={() => handleOpenModal(item)}
-                              title="Edit"
-                            >
-                              <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0 text-danger"
-                              onClick={() => handleDelete(item._id)}
-                              title="Delete"
-                            >
-                              <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {variants.length === 0 && <tr><td colSpan="4" className="text-center">No variants found</td></tr>}
-                  </tbody>
-                </Table>
-              </div>
+              <DataTable
+                columns={[
+                  { key: 'modelYear', label: 'Model Year', render: (item) => formatModelYear(item.modelYearId) },
+                  { key: 'name', label: 'Variant', render: (item) => item.name },
+                  { key: 'status', label: 'Status', render: (item) => (
+                    <span className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
+                      {item.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  )},
+                  { key: 'actions', label: 'Action', render: (item) => (
+                    <div className="d-flex gap-2">
+                      <Button size="sm" variant="link" className="p-0 text-primary" onClick={() => handleOpenModal(item)} title="Edit">
+                        <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
+                      </Button>
+                      <Button size="sm" variant="link" className="p-0 text-danger" onClick={() => handleDelete(item._id)} title="Delete">
+                        <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
+                      </Button>
+                    </div>
+                  )}
+                ]}
+                data={variants}
+                loading={loading}
+                emptyMessage="No variants found"
+              />
             </CardBody>
           </Card>
         </Col>
       </Row>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingItem ? 'Edit' : 'Add'} Variant</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Model Year</Form.Label>
-              <Form.Select
-                value={newItem.modelYearId}
-                onChange={e => setNewItem({ ...newItem, modelYearId: e.target.value })}
-              >
-                <option value="">Select model year</option>
-                {modelYears.map((modelYear) => (
-                  <option key={modelYear._id} value={modelYear._id}>
-                    {formatModelYear(modelYear._id)}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Variant Name</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g., VXi, ZX, Diesel"
-                value={newItem.name}
-                onChange={e => setNewItem({ ...newItem, name: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Select
-                value={newItem.status}
-                onChange={e => setNewItem({ ...newItem, status: e.target.value })}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-          <Button variant="primary" onClick={handleSave}>Save</Button>
-        </Modal.Footer>
-      </Modal>
+      <CRUDModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        title={`${editingItem ? 'Edit' : 'Add'} Variant`}
+        editMode={!!editingItem}
+        initialData={editingItem || {}}
+        submitting={submitting}
+        error={error}
+        icon="solar:settings-bold-duotone"
+        fields={[
+          {
+            name: 'modelYearId',
+            label: 'Model Year',
+            type: 'select',
+            required: true,
+            options: modelYears.map(my => ({ value: my._id, label: formatModelYear(my._id) }))
+          },
+          {
+            name: 'name',
+            label: 'Variant Name',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g., VXi, ZX, Diesel'
+          },
+          {
+            name: 'status',
+            label: 'Status',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' }
+            ]
+          }
+        ]}
+      />
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete this variant?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
-        </Modal.Footer>
-      </Modal>
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        itemName={variants.find(v => v._id === deletingId)?.name}
+        itemType="variant"
+        deleting={deleting}
+      />
     </>
   )
 }

@@ -15,6 +15,7 @@ const taxService = require('../../services/tax.service');
 const shippingService = require('../../services/shipping.service');
 const shipmentRepo = require('../shipments/shipment.repo');
 const invoiceService = require('../invoice/invoice.service');
+const invoiceRepo = require('../invoice/invoice.repo');
 const orderStateMachine = require('../../utils/orderStateMachine');
 const emailNotification = require('../../services/emailNotification.service');
 const pricingService = require('../../services/pricing.service');
@@ -175,8 +176,20 @@ class OrderService {
         const lineSubtotal = unitPrice * item.quantity;
         const lineTotal = lineSubtotal;
 
+        // Get primary product image
+        let primaryImageUrl = null;
+        if (product.productImages && product.productImages.length > 0) {
+          primaryImageUrl = product.productImages[0].imageUrl || null;
+        }
+
         orderItems.push({
           productId: product._id,
+          // Product snapshot fields
+          productName: product.name || 'Unknown Product',
+          productSlug: product.slug || null,
+          productImage: primaryImageUrl,
+          productDescription: product.shortDescription || product.description?.substring(0, 250) || null,
+          // Existing fields
           sku:
             product.sku ||
             product.productId ||
@@ -717,23 +730,47 @@ class OrderService {
     const order = await orderRepo.findById(orderId);
     if (!order) error('Order not found', 404);
 
-    return orderRepo.applyOrderMutation({
+    const previousStatus = order.orderStatus;
+    const previousPaymentStatus = order.paymentStatus;
+
+    const updated = await orderRepo.applyOrderMutation({
       orderId,
       actor: { id: admin.id, role: admin.role },
       reason: 'admin_update',
       mutateFn: (o) => {
         orderStateMachine.assertTransition(o.orderStatus, payload.status);
         o.orderStatus = payload.status;
+        
+        // Allow updating payment status for COD
+        if (payload.paymentStatus) {
+          o.paymentStatus = payload.paymentStatus;
+        }
       },
     });
 
-    if (updated.paymentStatus === PAYMENT_STATUS.PAID) {
+    // Generate invoice when payment is marked as paid (online or COD)
+    if (updated.paymentStatus === 'paid' && previousPaymentStatus !== 'paid') {
       await invoiceService.generateFromOrder(updated).catch((err) => {
-        logger.error('Failed to generate invoice on admin status update', {
+        logger.error('Failed to generate invoice on payment received', {
           orderId: updated._id,
           error: err.message,
         });
       });
+    }
+
+    // Generate credit note if order was cancelled and invoice exists
+    if (updated.orderStatus === 'cancelled' && previousStatus !== 'cancelled') {
+      // Check if invoice exists
+      const invoice = await invoiceRepo.findByOrder(updated._id);
+      if (invoice && invoice.type === 'invoice') {
+        await invoiceService.generateCreditNote(updated, invoice).catch((err) => {
+          logger.error('Failed to generate credit note for cancelled order', {
+            orderId: updated._id,
+            invoiceId: invoice._id,
+            error: err.message,
+          });
+        });
+      }
     }
 
     return updated;

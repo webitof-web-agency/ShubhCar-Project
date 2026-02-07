@@ -8,6 +8,7 @@ import { Card, CardFooter, CardTitle, Col, Row, Spinner, Alert, Badge, Form } fr
 import couponService from '@/services/couponService'
 import { currency } from '@/context/constants'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import StatusToggle from '@/components/shared/StatusToggle'
 
 const CouponsDataList = ({ coupons = [], setCoupons, loading = false }) => {
   const { data: session } = useSession()
@@ -221,13 +222,11 @@ const CouponsDataList = ({ coupons = [], setCoupons, loading = false }) => {
                           )}
                         </td>
                         <td>
-                          <Form.Check
-                            type="switch"
-                            id={`status-${coupon._id}`}
+                          <StatusToggle
                             checked={coupon.isActive}
                             onChange={() => handleStatusToggle(coupon._id, coupon.isActive)}
                             disabled={isExpired(coupon.validTo)}
-                            title={isExpired(coupon.validTo) ? 'Cannot toggle expired coupons' : 'Toggle active status'}
+                            label={isExpired(coupon.validTo) ? 'Expired' : ''}
                           />
                         </td>
                         <td>

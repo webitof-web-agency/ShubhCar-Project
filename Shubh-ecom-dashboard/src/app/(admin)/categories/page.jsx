@@ -8,7 +8,6 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  Table,
   Row,
   Col,
   Button,
@@ -22,6 +21,8 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTItle from '@/components/PageTItle'
 import FormErrorModal from '@/components/forms/FormErrorModal'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import DataTable from '@/components/shared/DataTable'
+import StatusToggle from '@/components/shared/StatusToggle'
 
 
 const flattenCategories = (nodes = []) => {
@@ -318,82 +319,53 @@ const CategoriesPage = () => {
               </Button>
             </CardHeader>
             <CardBody>
-              <div className="table-responsive">
-                <Table hover responsive className="align-middle">
-                  <thead className="bg-light-subtle">
-                    <tr>
-                      <th style={{ width: 20 }}>
-                        <Form.Check />
-                      </th>
-                      <th>Name</th>
-                      <th>Slug</th>
-                      <th>Parent</th>
-                      <th>Status</th>
-                      <th>Active</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.map((cat) => (
-                      <tr key={cat._id}>
-                        <td>
-                          <Form.Check />
-                        </td>
-                        <td className="fw-medium">{cat.name}</td>
-                        <td>
-                          <code>{cat.slug}</code>
-                        </td>
-                        <td>{cat.parentName || 'Root'}</td>
-                        <td>
-                          <Badge bg={cat.isActive ? 'success' : 'secondary'} className="badge-subtle">
-                            {cat.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Form.Check
-                            type="switch"
-                            id={`cat-toggle-${cat._id}`}
-                            label={togglingId === cat._id ? 'Updating...' : cat.isActive ? 'Active' : 'Inactive'}
-                            checked={!!cat.isActive}
-                            disabled={togglingId === cat._id}
-                            onChange={() => handleToggleActive(cat)}
-                          />
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              variant="soft-primary"
-                              size="sm"
-                              onClick={() => handleOpenEditModal(cat)}
-                            >
-                              <IconifyIcon icon="solar:pen-2-broken" />
-                            </Button>
-                            <Button
-                              variant="soft-danger"
-                              size="sm"
-                              disabled={deletingId === cat._id}
-                              onClick={() => handleDeleteClick(cat)}
-                            >
-                              {deletingId === cat._id ? (
-                                <Spinner animation="border" size="sm" />
-                              ) : (
-                                <IconifyIcon icon="solar:trash-bin-minimalistic-2-broken" />
-                              )}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {!categories.length && (
-                      <tr>
-                        <td colSpan={5} className="text-center text-muted py-4">
-                          No categories found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </div>
+              <DataTable
+                columns={[
+                  { key: 'checkbox', label: '', width: 20, render: () => <Form.Check /> },
+                  { key: 'name', label: 'Name', render: (cat) => <span className="fw-medium">{cat.name}</span> },
+                  { key: 'slug', label: 'Slug', render: (cat) => <code>{cat.slug}</code> },
+                  { key: 'parent', label: 'Parent', render: (cat) => cat.parentName || 'Root' },
+                  { key: 'status', label: 'Status', render: (cat) => (
+                    <Badge bg={cat.isActive ? 'success' : 'secondary'} className="badge-subtle">
+                      {cat.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  )},
+                  { key: 'active', label: 'Active', render: (cat) => (
+                    <StatusToggle
+                      checked={!!cat.isActive}
+                      onChange={() => handleToggleActive(cat)}
+                      loading={togglingId === cat._id}
+                      label={cat.isActive ? 'Active' : 'Inactive'}
+                    />
+                  )},
+                  { key: 'actions', label: 'Actions', render: (cat) => (
+                    <div className="d-flex gap-2">
+                      <Button
+                        variant="soft-primary"
+                        size="sm"
+                        onClick={() => handleOpenEditModal(cat)}
+                      >
+                        <IconifyIcon icon="solar:pen-2-broken" />
+                      </Button>
+                      <Button
+                        variant="soft-danger"
+                        size="sm"
+                        disabled={deletingId === cat._id}
+                        onClick={() => handleDeleteClick(cat)}
+                      >
+                        {deletingId === cat._id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <IconifyIcon icon="solar:trash-bin-minimalistic-2-broken" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                ]}
+                data={categories}
+                loading={loading}
+                emptyMessage="No categories found."
+              />
             </CardBody>
           </Card>
         </Col>
@@ -484,7 +456,7 @@ const CategoriesPage = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create'}
+              {submitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update' : 'Create')}
             </Button>
           </Modal.Footer>
         </Form>

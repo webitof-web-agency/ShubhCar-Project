@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { inventoryAPI } from '@/helpers/inventoryApi'
 import { API_BASE_URL } from '@/helpers/apiBase'
+import DataTable from '@/components/shared/DataTable'
 
 const WarehouseList = ({ filters = {}, onInventoryChange }) => {
   const { data: session } = useSession()
@@ -114,70 +115,35 @@ const WarehouseList = ({ filters = {}, onInventoryChange }) => {
 
           <div>
             {error && <Alert variant="danger" className="m-3">{error}</Alert>}
-            <div className="table-responsive">
-              <table className="table align-middle mb-0 table-hover table-centered">
-                <thead className="bg-light-subtle">
-                  <tr>
-                    <th style={{ width: 20 }}>
-                      {/* <div className="form-check">
-                        <input type="checkbox" className="form-check-input" id="customCheck1" />
-                        <label className="form-check-label" htmlFor="customCheck1" />
-                      </div> */}
-                    </th>
-                    <th>Product ID</th>
-                    <th>Product</th>
-                    <th>SKU</th>
-                    <th>Stock</th>
-                    <th>Reserved</th>
-                    <th>Available</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="8" className="text-center py-4">
-                        <Spinner animation="border" />
-                      </td>
-                    </tr>
-                  ) : products.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="text-center py-4 text-muted">No inventory data found</td>
-                    </tr>
-                  ) : (
-                    products.map((item) => (
-                      <tr key={item._id}>
-                        <td>
-                          <div className="form-check">
-                            <input type="checkbox" className="form-check-input" id={`product-${item._id}`} />
-                            <label className="form-check-label" htmlFor={`product-${item._id}`}>
-                              &nbsp;
-                            </label>
-                          </div>
-                        </td>
-                        <td>{String(item.productId || item._id || '').replace(/\D/g, '').slice(-10) || '-'}</td>
-                        <td>{item.name || item.productName}</td>
-                        <td>{item.sku || '-'}</td>
-                        <td>{item.stockQty ?? 0}</td>
-                        <td>{item.reservedQty ?? 0}</td>
-                        <td>{item.availableQty ?? 0}</td>
-                        <td>
-                          <Button
-                            size="sm"
-                            variant="link"
-                            className="p-0 text-primary"
-                            onClick={() => openEditModal(item)}
-                            title="Edit stock"
-                          >
-                            <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={18} height={18} />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={[
+                { key: 'checkbox', label: '', width: 20, render: (item) => (
+                  <Form.Check id={`product-${item._id}`} />
+                )},
+                { key: 'productId', label: 'Product ID', render: (item) => 
+                  String(item.productId || item._id || '').replace(/\D/g, '').slice(-10) || '-'
+                },
+                { key: 'name', label: 'Product', render: (item) => item.name || item.productName },
+                { key: 'sku', label: 'SKU', render: (item) => item.sku || '-' },
+                { key: 'stockQty', label: 'Stock', render: (item) => item.stockQty ?? 0 },
+                { key: 'reservedQty', label: 'Reserved', render: (item) => item.reservedQty ?? 0 },
+                { key: 'availableQty', label: 'Available', render: (item) => item.availableQty ?? 0 },
+                { key: 'actions', label: 'Action', render: (item) => (
+                  <Button
+                    size="sm"
+                    variant="link"
+                    className="p-0 text-primary"
+                    onClick={() => openEditModal(item)}
+                    title="Edit stock"
+                  >
+                    <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={18} height={18} />
+                  </Button>
+                )}
+              ]}
+              data={products}
+              loading={loading}
+              emptyMessage="No inventory data found"
+            />
           </div>
           {!loading && totalPages > 1 && (
             <CardFooter className="border-top">

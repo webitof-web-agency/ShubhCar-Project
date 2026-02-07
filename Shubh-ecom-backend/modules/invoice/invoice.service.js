@@ -7,6 +7,7 @@ const invoiceRepo = require('./invoice.repo');
 const orderRepo = require('../orders/order.repo');
 const User = require('../../models/User.model');
 const UserAddress = require('../../models/UserAddress.model');
+const logger = require('../../config/logger');
 
 class InvoiceService {
   async generateFromOrder(order) {
@@ -22,7 +23,7 @@ class InvoiceService {
     const orderItems = await orderRepo.findItemsByOrder(order._id);
 
     const items = orderItems.map((i) => ({
-      name: i.productSnapshot?.name || '',
+      name: i.productName || '[Product Deleted]',
       sku: i.sku,
       quantity: i.quantity,
       unitPrice: i.price,
@@ -112,6 +113,92 @@ class InvoiceService {
     await sendEmail({
       to: invoice.customerSnapshot.email,
       subject: tpl.subject.replace('{{orderNumber}}', order._id),
+      html,
+    });
+  }
+
+  /**
+   * Generate credit note for cancelled/refunded order
+   * @param {Object} order - The order that was cancelled
+   * @param {Object} originalInvoice - The original invoice to credit
+   * @returns {Object} Credit note document
+   */
+  async generateCreditNote(order, originalInvoice) {
+    // Check if credit note already exists
+    const existingCreditNote = await Invoice.findOne({
+      type: 'credit_note',
+      relatedInvoiceId: originalInvoice._id,
+    });
+
+    if (existingCreditNote) {
+      return existingCreditNote;
+    }
+
+    // Generate credit note number
+    const creditNoteNumber = `CN-${originalInvoice.invoiceNumber}`;
+
+    // Create credit note (same data as invoice but marked as credit_note)
+    const creditNote = await Invoice.create({
+      type: 'credit_note',
+      orderId: order._id,
+      invoiceNumber: creditNoteNumber,
+      relatedInvoiceId: originalInvoice._id,
+      customerSnapshot: originalInvoice.customerSnapshot,
+      items: originalInvoice.items, // Same items as original
+      totals: originalInvoice.totals, // Same totals (will be shown as credit)
+      orderSnapshot: {
+        ...originalInvoice.orderSnapshot,
+        cancelledAt: order.updatedAt || new Date(),
+      },
+      refundMeta: order.refundMeta || {},
+    });
+
+    // Email credit note to customer
+    await this.emailCreditNote(order, creditNote, originalInvoice).catch((err) => {
+      logger.error('Failed to email credit note', {
+        orderId: order._id,
+        creditNoteNumber: creditNote.invoiceNumber,
+        error: err.message,
+      });
+    });
+    
+    return creditNote;
+  }
+
+  /**
+   * Email credit note to customer
+   */
+  async emailCreditNote(order, creditNote, originalInvoice) {
+    const tpl = await EmailTemplate.findOne({ name: 'credit_note' }).lean();
+    
+    // Fallback to order invoice template if credit note template doesn't exist
+    if (!tpl) {
+      logger.warn('Credit note email template not found, skipping email');
+      return;
+    }
+
+    let html = tpl.bodyHtml;
+
+    const vars = {
+      appName: process.env.APP_NAME,
+      creditNoteNumber: creditNote.invoiceNumber,
+      originalInvoiceNumber: originalInvoice.invoiceNumber,
+      orderNumber: order.orderNumber || order._id,
+      creditNoteDate: creditNote.issuedAt ? creditNote.issuedAt.toDateString() : new Date().toDateString(),
+      customerName: creditNote.customerSnapshot.name,
+      customerEmail: creditNote.customerSnapshot.email,
+      grandTotal: creditNote.totals.grandTotal,
+      refundReason: order.cancelReason || 'Order cancelled',
+    };
+
+    // Naive variable replacement
+    Object.entries(vars).forEach(([k, v]) => {
+      html = html.replaceAll(`{{${k}}}`, v ?? '');
+    });
+
+    await sendEmail({
+      to: creditNote.customerSnapshot.email,
+      subject: tpl.subject.replace('{{orderNumber}}', order.orderNumber || order._id),
       html,
     });
   }

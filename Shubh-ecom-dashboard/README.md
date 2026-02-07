@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Shubh E-com Dashboard V2
 
-## Getting Started
+## 🚀 Overview
+The Admin Dashboard for the SpareParts E-commerce platform. Built with **Next.js 14**, **React Bootstrap**, and a centralized component architecture for rapid development and consistency.
 
-First, run the development server:
+## 🏗️ Architecture & Project Structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+We follow a **"Shared Component"** architecture to minimize code duplication.
+
+```
+src/
+├── app/(admin)/            # Admin pages (Next.js App Router)
+├── components/
+│   ├── shared/             # ⭐️ CORES: Reusable UI logic
+│   │   ├── DataTable.jsx   # Standardized list view with pagination/actions
+│   │   ├── CRUDModal.jsx   # Generic Create/Edit modal with form engine
+│   │   ├── DeleteConfirmModal.jsx # Standard delete dialog
+│   │   └── StatusBadge.jsx # (Optional) Standardized status badges
+│   ├── form/               # Form inputs (Dropzone, Select, etc.)
+│   └── ...
+├── hooks/
+│   ├── useAPI.js           # ⭐️ CORE: Standardized API wrapper (loading/toast/errors)
+│   ├── useFormValidation.js # Form validation logic
+│   └── ...
+└── helpers/                # API service layers
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Core Components
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### 1. `DataTable`
+The standard way to display lists of data. Handles loading states, empty states, and pagination automatically.
 
-## Learn More
+**Usage:**
+```jsx
+<DataTable
+  columns={[
+    { key: 'name', label: 'Name', render: (item) => <b>{item.name}</b> },
+    { key: 'status', label: 'Status' }
+  ]}
+  data={items}
+  loading={loading}
+  actions={/* Optional override */}
+/>
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 2. `CRUDModal`
+A powerful, configuration-driven modal for Create and Edit operations. It handles form state, validation, and submission automatically based on a `fields` configuration.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Usage:**
+```jsx
+<CRUDModal
+  show={showModal}
+  title="Add Product"
+  fields={[
+    { name: 'name', label: 'Product Name', type: 'text', required: true },
+    { name: 'role', label: 'Role', type: 'select', options: [...] }
+  ]}
+  onSubmit={handleSubmit}
+/>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### 3. `useAPI` Hook
+Wraps all API calls to provide automatic:
+- Loading state (`loading`)
+- Error handling (Toast notifications)
+- Success messages
 
-## Deploy on Vercel
+**Usage:**
+```jsx
+const { execute: saveItem, loading } = useAPI(
+  async (data) => await api.create(data),
+  { showSuccessToast: true, successMessage: 'Item saved!' }
+)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## 📧 Email System (Backend Integration)
+
+The dashboard triggers emails via the backend `EmailNotificationService`.
+- **Infrastructure**: Gmail SMTP (via `nodemailer`)
+- **Templates**: Stored in MongoDB (`EmailTemplate` collection)
+- **Key Triggers**:
+    - `auth_email_verification`: On User Registration
+    - `forgot_password_otp`: On Password Reset
+    - `order_invoice`: On Order Payment Success
+    - `credit_note`: On Order Cancellation/Refund
+
+---
+
+## 💻 Development
+
+### Key Commands
+```bash
+npm run dev     # Start development server (Port 3001)
+npm run lint    # Run ESLint
+npm run build   # Build for production
+```
+
+### Adding a New Page?
+1. Copy the structure of `src/app/(admin)/users/page.jsx` or `vehicle-years/page.jsx`.
+2. Define your `columns` for the `DataTable`.
+3. Define your `fields` for the `CRUDModal`.
+4. Connect API calls using `useAPI`.
+5. **Done!** You have a full CRUD page with validation and error handling in ~150 lines.

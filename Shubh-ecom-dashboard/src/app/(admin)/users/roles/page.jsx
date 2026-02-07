@@ -21,6 +21,7 @@ import { rolesAPI } from '@/helpers/rolesApi'
 import { PERMISSION_ACTIONS, PERMISSION_MATRIX } from '@/constants/permissions'
 import { toast } from 'react-toastify'
 import { usePermissions } from '@/hooks/usePermissions'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 
 const RolesPage = () => {
   const { data: session, status } = useSession()
@@ -33,6 +34,9 @@ const RolesPage = () => {
   const [formData, setFormData] = useState({ name: '', permissions: [] })
   const [originalPermissions, setOriginalPermissions] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [roleToDelete, setRoleToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const canViewRoles = hasPermission('roles.view')
   const canCreateRoles = hasPermission('roles.create')
@@ -139,18 +143,30 @@ const RolesPage = () => {
     }
   }
 
-  const handleDelete = async (role) => {
+  const handleDeleteClick = (role) => {
     if (role.isSystem) return
-    if (!confirm(`Delete role "${role.name}"?`)) return
+    setRoleToDelete(role)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!roleToDelete) return
     try {
-      await rolesAPI.remove(role._id, session.accessToken)
+      setDeleting(true)
+      await rolesAPI.remove(roleToDelete._id, session.accessToken)
       toast.success('Role deleted')
       fetchRoles()
+      setShowDeleteModal(false)
+      setRoleToDelete(null)
     } catch (err) {
       console.error(err)
       toast.error(err.message || 'Failed to delete role')
+    } finally {
+      setDeleting(false)
     }
   }
+
+  const handleDelete = handleDeleteClick
 
   if (!canViewRoles) {
     return (
@@ -332,6 +348,15 @@ const RolesPage = () => {
           </Form>
         </Modal.Body>
       </Modal>
+
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        itemType="role"
+        itemName={roleToDelete?.name}
+        deleting={deleting}
+      />
     </>
   )
 }

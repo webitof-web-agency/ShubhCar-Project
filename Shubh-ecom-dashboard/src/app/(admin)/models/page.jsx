@@ -1,6 +1,6 @@
 'use client'
 import PageTItle from '@/components/PageTItle'
-import { Card, CardBody, Col, Row, Spinner, Table, Button, Form, Modal } from 'react-bootstrap'
+import { Card, CardBody, Col, Row, Spinner, Button } from 'react-bootstrap'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL, API_ORIGIN } from '@/helpers/apiBase'
@@ -8,6 +8,10 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import { mediaAPI } from '@/helpers/mediaApi'
 import DropzoneFormInput from '@/components/form/DropzoneFormInput'
 import MediaPickerModal from '@/components/media/MediaPickerModal'
+import DataTable from '@/components/shared/DataTable'
+import CRUDModal from '@/components/shared/CRUDModal'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import useAPI from '@/hooks/useAPI'
 
 const ModelsPage = () => {
   const { data: session } = useSession()
@@ -16,12 +20,38 @@ const ModelsPage = () => {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingModel, setEditingModel] = useState(null)
-  const [newItem, setNewItem] = useState({ brandId: '', name: '', image: '', status: 'active' })
+  const [error, setError] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [showMediaPicker, setShowMediaPicker] = useState(false)
-
+  const [tempImageUrl, setTempImageUrl] = useState('')
+  
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+
+  // useAPI hook for DELETE operation
+  const { execute: deleteModel, loading: deleting } = useAPI(
+    (id) => fetch(`${API_BASE_URL}/vehicle-models/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session?.accessToken}` }
+    }).then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to delete'))),
+    { showSuccessToast: true, successMessage: 'Model deleted successfully!' }
+  )
+
+  // useAPI hook for POST/PUT operation
+  const { execute: saveModel, loading: submitting } = useAPI(
+    (formData, imageUrl, id) => {
+      const url = id ? `${API_BASE_URL}/vehicle-models/${id}` : `${API_BASE_URL}/vehicle-models`
+      return fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ...formData, image: imageUrl })
+      }).then(res => res.ok ? res.json() : res.json().then(err => Promise.reject(new Error(err.message || 'Failed to save'))))
+    },
+    { showSuccessToast: true, successMessage: 'Model saved successfully!' }
+  )
 
   const mediaBaseUrl = API_ORIGIN
 
@@ -78,13 +108,9 @@ const ModelsPage = () => {
   }, [session])
 
   const handleOpenModal = (model = null) => {
-    if (model) {
-      setEditingModel(model)
-      setNewItem({ brandId: model.brandId, name: model.name, image: model.image || '', status: model.status || 'active' })
-    } else {
-      setEditingModel(null)
-      setNewItem({ brandId: '', name: '', image: '', status: 'active' })
-    }
+    setEditingModel(model)
+    setTempImageUrl(model?.image || '')
+    setError(null)
     setShowModal(true)
   }
 
@@ -96,7 +122,7 @@ const ModelsPage = () => {
       const uploaded = await mediaAPI.upload([file], 'product', session.accessToken)
       const items = uploaded?.data || []
       const imageUrl = Array.isArray(items) && items.length ? items[0].url : ''
-      setNewItem(prev => ({ ...prev, image: imageUrl }))
+      setTempImageUrl(imageUrl)
     } catch (error) {
       console.error(error)
       alert('Failed to upload image')
@@ -105,37 +131,17 @@ const ModelsPage = () => {
     }
   }
 
-  const handleSave = async () => {
+  const handleSubmit = async (formData) => {
     if (!session?.accessToken) return
-    if (!newItem.brandId || !newItem.name) {
-      alert('Please select a brand and enter model name')
-      return
-    }
     try {
-      const url = editingModel
-        ? `${API_BASE_URL}/vehicle-models/${editingModel._id}`
-        : `${API_BASE_URL}/vehicle-models`
-
-      const response = await fetch(url, {
-        method: editingModel ? 'PUT' : 'POST',
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newItem),
-      })
-
-      if (response.ok) {
-        setShowModal(false)
-        setEditingModel(null)
-        setNewItem({ brandId: '', name: '', image: '', status: 'active' })
-        fetchModels()
-      } else {
-        alert('Failed to save model')
-      }
+      await saveModel(formData, tempImageUrl, editingModel?._id)
+      setShowModal(false)
+      setEditingModel(null)
+      setTempImageUrl('')
+      fetchModels()
     } catch (error) {
-      console.error(error)
-      alert('Failed to save model')
+      console.error('Save failed:', error)
+      setError(error.message || 'Failed to save model')
     }
   }
 
@@ -147,26 +153,13 @@ const ModelsPage = () => {
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/vehicle-models/${deletingId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
-      )
-
-      if (response.ok) {
-        fetchModels()
-        setShowDeleteModal(false)
-        setDeletingId(null)
-      } else {
-        alert('Failed to delete')
-      }
+      await deleteModel(deletingId)
+      fetchModels()
+      setShowDeleteModal(false)
+      setDeletingId(null)
     } catch (error) {
-      console.error(error)
-      alert('Failed to delete')
+      console.error('Delete failed:', error)
+      // Error toast already shown by useAPI
     }
   }
 
@@ -182,116 +175,77 @@ const ModelsPage = () => {
               <div className="d-flex justify-content-end mb-3">
                 <Button variant="primary" onClick={() => handleOpenModal()}>Add Model</Button>
               </div>
-              <div className="table-responsive">
-                <Table hover responsive className="table-nowrap mb-0 align-middle">
-                  <thead>
-                    <tr>
-                      <th>Brand</th>
-                      <th>Model</th>
-                      <th>Image</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {models.map((item) => (
-                      <tr key={item._id}>
-                        <td>{brandMap.get(item.brandId)?.name || 'N/A'}</td>
-                        <td>{item.name}</td>
-                        <td>
-                          {item.image ? (
-                            <img
-                              src={resolveMediaUrl(item.image)}
-                              alt={item.name}
-                              className="rounded border"
-                              style={{ width: 40, height: 40, objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <span className="text-muted">No image</span>
-                          )}
-                        </td>
-                        <td>
-                          <span
-                            className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active'
-                              ? 'bg-success-subtle text-success'
-                              : 'bg-danger-subtle text-danger'
-                              }`}
-                            style={{
-                              backgroundColor: item.status === 'active' ? '#e6fffa' : '#fff5f5',
-                              color: item.status === 'active' ? '#00b894' : '#ff7675',
-                            }}
-                          >
-                            {item.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0 text-primary"
-                              onClick={() => handleOpenModal(item)}
-                              title="Edit"
-                            >
-                              <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0 text-danger"
-                              onClick={() => handleDelete(item._id)}
-                              title="Delete"
-                            >
-                              <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {models.length === 0 && <tr><td colSpan="5" className="text-center">No models found</td></tr>}
-                  </tbody>
-                </Table>
-              </div>
+              <DataTable
+                columns={[
+                  { key: 'brand', label: 'Brand', render: (item) => brandMap.get(item.brandId)?.name || 'N/A' },
+                  { key: 'name', label: 'Model', render: (item) => item.name },
+                  { key: 'image', label: 'Image', render: (item) => (
+                    item.image ? (
+                      <img src={resolveMediaUrl(item.image)} alt={item.name} className="rounded border" style={{ width: 40, height: 40, objectFit: 'cover' }} />
+                    ) : <span className="text-muted">No image</span>
+                  )},
+                  { key: 'status', label: 'Status', render: (item) => (
+                    <span
+                      className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}
+                      style={{ backgroundColor: item.status === 'active' ? '#e6fffa' : '#fff5f5', color: item.status === 'active' ? '#00b894' : '#ff7675' }}
+                    >
+                      {item.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  )},
+                  { key: 'actions', label: 'Action', render: (item) => (
+                    <div className="d-flex gap-2">
+                      <Button size="sm" variant="link" className="p-0 text-primary" onClick={() => handleOpenModal(item)} title="Edit">
+                        <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
+                      </Button>
+                      <Button size="sm" variant="link" className="p-0 text-danger" onClick={() => handleDelete(item._id)} title="Delete">
+                        <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
+                      </Button>
+                    </div>
+                  )}
+                ]}
+                data={models}
+                loading={loading}
+                emptyMessage="No models found"
+              />
             </CardBody>
           </Card>
         </Col>
       </Row>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingModel ? 'Edit' : 'Add'} Vehicle Model</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Brand</Form.Label>
-              <Form.Select
-                value={newItem.brandId}
-                onChange={e => setNewItem({ ...newItem, brandId: e.target.value })}
-              >
-                <option value="">Select brand</option>
-                {brands.map((brand) => (
-                  <option key={brand._id} value={brand._id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Model Name</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g., Swift, City"
-                value={newItem.name}
-                onChange={e => setNewItem({ ...newItem, name: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label className="d-block">Model Image (optional)</Form.Label>
-              {newItem.image ? (
+      <CRUDModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        title={`${editingModel ? 'Edit' : 'Add'} Vehicle Model`}
+        editMode={!!editingModel}
+        initialData={editingModel || {}}
+        submitting={submitting}
+        error={error}
+        icon="solar:car-bold-duotone"
+        fields={[
+          {
+            name: 'brandId',
+            label: 'Brand',
+            type: 'select',
+            required: true,
+            options: brands.map(b => ({ value: b._id, label: b.name }))
+          },
+          {
+            name: 'name',
+            label: 'Model Name',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g., Swift, City'
+          },
+          {
+            name: 'image',
+            label: 'Model Image (optional)',
+            type: 'custom',
+            render: () => (
+              tempImageUrl ? (
                 <div className="position-relative d-inline-block">
                   <img
-                    src={resolveMediaUrl(newItem.image)}
+                    src={resolveMediaUrl(tempImageUrl)}
                     alt="Model"
                     className="rounded border"
                     style={{ width: 140, height: 140, objectFit: 'cover' }}
@@ -301,7 +255,7 @@ const ModelsPage = () => {
                     variant="light"
                     className="position-absolute top-0 start-100 translate-middle p-0 rounded-circle border"
                     style={{ width: 26, height: 26 }}
-                    onClick={() => setNewItem((prev) => ({ ...prev, image: '' }))}
+                    onClick={() => setTempImageUrl('')}
                     title="Remove image"
                   >
                     <IconifyIcon icon="mdi:close" width={16} height={16} />
@@ -326,40 +280,32 @@ const ModelsPage = () => {
                   >
                     Choose from Media Library
                   </Button>
+                  {uploading && <div className="text-muted mt-2">Uploading...</div>}
                 </div>
-              )}
-              {uploading && <div className="text-muted mt-2">Uploading...</div>}
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Select
-                value={newItem.status}
-                onChange={e => setNewItem({ ...newItem, status: e.target.value })}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-          <Button variant="primary" onClick={handleSave}>Save</Button>
-        </Modal.Footer>
-      </Modal>
+              )
+            )
+          },
+          {
+            name: 'status',
+            label: 'Status',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' }
+            ]
+          }
+        ]}
+      />
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete this model?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
-        </Modal.Footer>
-      </Modal>
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        itemName={models.find(m => m._id === deletingId)?.name}
+        itemType="model"
+        deleting={deleting}
+      />
 
       <MediaPickerModal
         open={showMediaPicker}
@@ -369,7 +315,7 @@ const ModelsPage = () => {
         onSelect={(items) => {
           const selected = items[0]
           if (selected?.url) {
-            setNewItem((prev) => ({ ...prev, image: selected.url }))
+            setTempImageUrl(selected.url)
           }
         }}
       />

@@ -45,11 +45,23 @@ class SettingsService {
             'payment_cod_enabled',
             'payment_razorpay_enabled',
             'razorpay_key_id',
+            // Invoice company info (public for frontend invoice display)
+            'invoice_company_name',
+            'invoice_company_address_line1',
+            'invoice_company_address_line2',
+            'invoice_company_city',
+            'invoice_company_state',
+            'invoice_company_pincode',
+            'invoice_company_gstin',
+            'invoice_company_email',
+            'invoice_company_phone',
+            'invoice_company_website',
+            'invoice_logo_url',
         ]);
         const groupMap = {
             site_logo_dark: 'store',
             site_logo_light: 'store',
-            site_favicon: 'store',
+            'site_favicon': 'store',
             tax_origin_state: 'tax',
             tax_regions: 'tax',
             tax_classes: 'tax',
@@ -73,6 +85,20 @@ class SettingsService {
             invoice_number_digits: 'invoice',
             invoice_number_start: 'invoice',
             invoice_number_next: 'invoice',
+            // Invoice company information
+            invoice_company_name: 'invoice',
+            invoice_company_address_line1: 'invoice',
+            invoice_company_address_line2: 'invoice',
+            invoice_company_city: 'invoice',
+            invoice_company_state: 'invoice',
+            invoice_company_pincode: 'invoice',
+            invoice_company_gstin: 'invoice',
+            invoice_company_email: 'invoice',
+            invoice_company_phone: 'invoice',
+            invoice_company_website: 'invoice',
+            invoice_logo_url: 'invoice',
+            invoice_terms: 'invoice',
+            invoice_notes: 'invoice',
             storage_driver: 'storage',
             aws_region: 'storage',
             aws_s3_bucket: 'storage',
@@ -128,6 +154,39 @@ class SettingsService {
             result[s.key] = s.value;
         });
         return result;
+    }
+
+    /**
+     * Get invoice-specific settings with defaults
+     * Ensures invoices always have data to display
+     */
+    async getInvoiceSettings() {
+        const allSettings = await this.list();
+        
+        // Default values for when settings are not configured
+        const defaults = {
+            invoice_company_name: allSettings.site_name || 'Company Name',
+            invoice_company_address_line1: '123, Business Address',
+            invoice_company_address_line2: '',
+            invoice_company_city: 'City',
+            invoice_company_state: 'State',
+            invoice_company_pincode: '000000',
+            invoice_company_gstin: 'GSTIN NOT CONFIGURED',
+            invoice_company_email: 'contact@example.com',
+            invoice_company_phone: '+91 1800-000-0000',
+            invoice_company_website: 'www.example.com',
+            invoice_logo_url: allSettings.site_logo_dark || allSettings.site_logo_light || null,
+            invoice_terms: 'Goods once sold will not be taken back or exchanged. All disputes are subject to local jurisdiction.',
+            invoice_notes: 'This is a computer generated invoice.',
+        };
+
+        // Merge user settings with defaults (user settings take precedence)
+        const invoiceSettings = {};
+        for (const key in defaults) {
+            invoiceSettings[key] = allSettings[key] || defaults[key];
+        }
+
+        return invoiceSettings;
     }
 }
 

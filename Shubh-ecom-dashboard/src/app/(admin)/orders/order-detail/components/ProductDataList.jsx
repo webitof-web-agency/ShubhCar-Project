@@ -39,21 +39,17 @@ const ProductDataList = ({ items = [], orderStatus }) => {
                       <div className="d-flex align-items-center gap-3">
                         <div className="avatar-md bg-light rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
                           {(() => {
-                            const imageUrl =
-                              item.productId?.images?.[0]?.url ||
-                              item.product?.images?.[0]?.url ||
-                              item.productImages?.[0]?.url ||
-                              '';
+                            const imageUrl = item.productImage || '';  // Use snapshot field
                             if (imageUrl) {
                               const src = imageUrl.startsWith('http') ? imageUrl : `${API_ORIGIN}${imageUrl}`;
-                              return <img src={src} alt={item.productId?.name || 'Product'} width={48} height={48} className="rounded-3 object-fit-cover" />;
+                              return <img src={src} alt={item.productName || 'Product'} width={48} height={48} className="rounded-3 object-fit-cover" />;
                             }
                             return <IconifyIcon icon="solar:box-broken" className="text-secondary fs-24 opacity-50" />;
                           })()}
                         </div>
                         <div>
                           <h6 className="fw-semibold text-dark mb-1 text-wrap text-break" style={{ maxWidth: '300px' }}>
-                            {item.productId?.name || 'Unknown Product'}
+                            {item.productName || '[Product Deleted]'}
                           </h6>
                         </div>
                       </div>

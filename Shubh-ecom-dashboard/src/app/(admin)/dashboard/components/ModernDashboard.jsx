@@ -126,7 +126,12 @@ const ModernDashboard = () => {
         { opposite: true, labels: { formatter: (val) => `${val}` } },
       ],
       grid: { borderColor: 'rgba(148, 163, 184, 0.2)' },
-      tooltip: { shared: true },
+      tooltip: { 
+        shared: true,
+        marker: {
+          fillColors: ['#0f766e', '#f97316']
+        }
+      },
       legend: { position: 'top', horizontalAlign: 'right' },
     }),
     [chartData]

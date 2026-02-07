@@ -1,10 +1,14 @@
 'use client'
 import PageTItle from '@/components/PageTItle'
-import { Card, CardBody, Col, Row, Spinner, Table, Button, Form, Modal } from 'react-bootstrap'
+import { Card, CardBody, Col, Row, Spinner, Button } from 'react-bootstrap'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import DataTable from '@/components/shared/DataTable'
+import CRUDModal from '@/components/shared/CRUDModal'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import useAPI from '@/hooks/useAPI'
 
 const VehicleModelYearsPage = () => {
   const { data: session } = useSession()
@@ -13,10 +17,36 @@ const VehicleModelYearsPage = () => {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
-  const [newItem, setNewItem] = useState({ modelId: '', year: '', status: 'active' })
+  const [error, setError] = useState(null)
+
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+
+  // useAPI hook for DELETE operation
+  const { execute: deleteYear, loading: deleting } = useAPI(
+    (id) => fetch(`${API_BASE_URL}/vehicle-model-years/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session?.accessToken}` }
+    }).then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to delete'))),
+    { showSuccessToast: true, successMessage: 'Model year deleted successfully!' }
+  )
+
+  // useAPI hook for POST/PUT operation
+  const { execute: saveYear, loading: submitting } = useAPI(
+    (formData, id) => {
+      const url = id ? `${API_BASE_URL}/vehicle-model-years/${id}` : `${API_BASE_URL}/vehicle-model-years`
+      return fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ...formData, year: Number(formData.year) })
+      }).then(res => res.ok ? res.json() : res.json().then(err => Promise.reject(new Error(err.message || 'Failed to save'))))
+    },
+    { showSuccessToast: true, successMessage: 'Model year saved successfully!' }
+  )
 
   const modelMap = useMemo(() => {
     const map = new Map()
@@ -62,47 +92,21 @@ const VehicleModelYearsPage = () => {
   }, [session])
 
   const handleOpenModal = (item = null) => {
-    if (item) {
-      setEditingItem(item)
-      setNewItem({ modelId: item.modelId, year: String(item.year), status: item.status || 'active' })
-    } else {
-      setEditingItem(null)
-      setNewItem({ modelId: '', year: '', status: 'active' })
-    }
+    setEditingItem(item)
+    setError(null)
     setShowModal(true)
   }
 
-  const handleSave = async () => {
+  const handleSubmit = async (formData) => {
     if (!session?.accessToken) return
-    if (!newItem.modelId || !newItem.year) {
-      alert('Please select a model and enter year')
-      return
-    }
     try {
-      const url = editingItem
-        ? `${API_BASE_URL}/vehicle-model-years/${editingItem._id}`
-        : `${API_BASE_URL}/vehicle-model-years`
-
-      const response = await fetch(url, {
-        method: editingItem ? 'PUT' : 'POST',
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...newItem, year: Number(newItem.year) }),
-      })
-
-      if (response.ok) {
-        setShowModal(false)
-        setEditingItem(null)
-        setNewItem({ modelId: '', year: '', status: 'active' })
-        fetchYears()
-      } else {
-        alert('Failed to save')
-      }
+      await saveYear(formData, editingItem?._id)
+      setShowModal(false)
+      setEditingItem(null)
+      fetchYears()
     } catch (error) {
-      console.error(error)
-      alert('Failed to save')
+      console.error('Save failed:', error)
+      setError(error.message || 'Failed to save')
     }
   }
 
@@ -114,26 +118,13 @@ const VehicleModelYearsPage = () => {
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/vehicle-model-years/${deletingId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
-      )
-
-      if (response.ok) {
-        fetchYears()
-        setShowDeleteModal(false)
-        setDeletingId(null)
-      } else {
-        alert('Failed to delete')
-      }
+      await deleteYear(deletingId)
+      fetchYears()
+      setShowDeleteModal(false)
+      setDeletingId(null)
     } catch (error) {
-      console.error(error)
-      alert('Failed to delete')
+      console.error('Delete failed:', error)
+      // Error toast already shown by useAPI
     }
   }
 
@@ -149,121 +140,83 @@ const VehicleModelYearsPage = () => {
               <div className="d-flex justify-content-end mb-3">
                 <Button variant="primary" onClick={() => handleOpenModal()}>Add Year</Button>
               </div>
-              <div className="table-responsive">
-                <Table hover responsive className="table-nowrap mb-0 align-middle">
-                  <thead>
-                    <tr>
-                      <th>Model</th>
-                      <th>Year</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {years.map((item) => (
-                      <tr key={item._id}>
-                        <td>{modelMap.get(item.modelId)?.name || 'N/A'}</td>
-                        <td>{item.year}</td>
-                        <td>
-                          <span className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active'
-                            ? 'bg-success-subtle text-success'
-                            : 'bg-danger-subtle text-danger'
-                            }`}>
-                            {item.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0 text-primary"
-                              onClick={() => handleOpenModal(item)}
-                              title="Edit"
-                            >
-                              <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0 text-danger"
-                              onClick={() => handleDelete(item._id)}
-                              title="Delete"
-                            >
-                              <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {years.length === 0 && <tr><td colSpan="4" className="text-center">No years found</td></tr>}
-                  </tbody>
-                </Table>
-              </div>
+              <DataTable
+                columns={[
+                  { key: 'model', label: 'Model', render: (item) => modelMap.get(item.modelId)?.name || 'N/A' },
+                  { key: 'year', label: 'Year', render: (item) => item.year },
+                  { key: 'status', label: 'Status', render: (item) => (
+                    <span className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
+                      {item.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  )},
+                  { key: 'actions', label: 'Action', render: (item) => (
+                    <div className="d-flex gap-2">
+                      <Button size="sm" variant="link" className="p-0 text-primary" onClick={() => handleOpenModal(item)} title="Edit">
+                        <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
+                      </Button>
+                      <Button size="sm" variant="link" className="p-0 text-danger" onClick={() => handleDelete(item._id)} title="Delete">
+                        <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
+                      </Button>
+                    </div>
+                  )}
+                ]}
+                data={years}
+                loading={loading}
+                emptyMessage="No years found"
+              />
             </CardBody>
           </Card>
         </Col>
       </Row>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingItem ? 'Edit' : 'Add'} Model Year</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Model</Form.Label>
-              <Form.Select
-                value={newItem.modelId}
-                onChange={e => setNewItem({ ...newItem, modelId: e.target.value })}
-              >
-                <option value="">Select model</option>
-                {models.map((model) => (
-                  <option key={model._id} value={model._id}>
-                    {model.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Year</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="e.g., 2022"
-                value={newItem.year}
-                onChange={e => setNewItem({ ...newItem, year: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Select
-                value={newItem.status}
-                onChange={e => setNewItem({ ...newItem, status: e.target.value })}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-          <Button variant="primary" onClick={handleSave}>Save</Button>
-        </Modal.Footer>
-      </Modal>
+      <CRUDModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        title={`${editingItem ? 'Edit' : 'Add'} Model Year`}
+        editMode={!!editingItem}
+        initialData={editingItem ? { modelId: editingItem.modelId, year: String(editingItem.year), status: editingItem.status } : {}}
+        submitting={submitting}
+        error={error}
+        icon="solar:calendar-bold-duotone"
+        fields={[
+          {
+            name: 'modelId',
+            label: 'Model',
+            type: 'select',
+            required: true,
+            options: models.map(m => ({ value: m._id, label: m.name }))
+          },
+          {
+            name: 'year',
+            label: 'Year',
+            type: 'number',
+            required: true,
+            placeholder: 'e.g., 2022',
+            min: 1900,
+            max: 2100
+          },
+          {
+            name: 'status',
+            label: 'Status',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' }
+            ]
+          }
+        ]}
+      />
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete this model year?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
-        </Modal.Footer>
-      </Modal>
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        itemName={years.find(y => y._id === deletingId)?.year?.toString()}
+        itemType="model year"
+        deleting={deleting}
+      />
     </>
   )
 }

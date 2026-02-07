@@ -5,9 +5,21 @@ import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { formatPrice } from '@/services/pricingService';
 import { formatTaxBreakdown } from '@/services/taxDisplayService';
 
-const InvoiceTemplate = forwardRef(({ order, items = [], address }, ref) => {
+const InvoiceTemplate = forwardRef(({ order, items = [], address, settings = {} }, ref) => {
   const { siteName } = useSiteConfig();
   if (!order) return null;
+
+  // Use settings with fallbacks
+  const companyName = settings.invoice_company_name || `${siteName} India Pvt Ltd`;
+  const addressLine1 = settings.invoice_company_address_line1 || '123, Industrial Area, Phase 2';
+  const addressLine2 = settings.invoice_company_address_line2 || '';
+  const city = settings.invoice_company_city || 'Gurugram';
+  const state = settings.invoice_company_state || 'Haryana';
+  const pincode = settings.invoice_company_pincode || '122001';
+  const gstin = settings.invoice_company_gstin || 'GSTIN NOT CONFIGURED';
+  const companyEmail = settings.invoice_company_email || 'support@example.com';
+  const companyPhone = settings.invoice_company_phone || '+91 1800-123-4567';
+  const companyWebsite = settings.invoice_company_website || '';
 
   const invoiceNumber = `INV-${order.orderNumber || order._id}`;
   const invoiceDateSource = order.placedAt || order.createdAt;
@@ -27,9 +39,10 @@ const InvoiceTemplate = forwardRef(({ order, items = [], address }, ref) => {
   // This ensures Taxable + Tax + Shipping = Grand Total always holds true
   const taxableAmount = Math.max(0, grandTotal - shippingFee - taxAmount);
 
-  // Get logo from config
+  // Get logo from settings or config
+  const logoUrl = settings.invoice_logo_url;
   const { logoDark, logoLight } = useSiteConfig();
-  const logo = logoDark || logoLight;
+  const logo = logoUrl || logoDark || logoLight;
 
   return (
     <div ref={ref} className="text-sm leading-tight text-gray-900 p-6 print:p-10 print:text-[11px]" id="invoice-template">
@@ -37,18 +50,19 @@ const InvoiceTemplate = forwardRef(({ order, items = [], address }, ref) => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             {logo ? (
-              <img src={logo} alt={siteName} className="h-15 w-auto object-contain" />
+              <img src={logo} alt={companyName} className="h-15 w-auto object-contain" />
             ) : (
               <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">{siteName.substring(0, 2).toUpperCase()}</span>
+                <span className="text-white font-bold text-lg">{companyName.substring(0, 2).toUpperCase()}</span>
               </div>
             )}
           </div>
           <div className="mt-3 text-xs text-gray-600 leading-relaxed">
-            <p>{siteName} India Pvt Ltd</p>
-            <p>123, Industrial Area, Phase 2</p>
-            <p>Gurugram, Haryana - 122001</p>
-            <p>GSTIN: 06AAACA1234A1ZA</p>
+            <p>{companyName}</p>
+            <p>{addressLine1}</p>
+            {addressLine2 && <p>{addressLine2}</p>}
+            <p>{city}, {state} - {pincode}</p>
+            <p>GSTIN: {gstin}</p>
           </div>
         </div>
         <div className="text-right">
@@ -175,8 +189,11 @@ const InvoiceTemplate = forwardRef(({ order, items = [], address }, ref) => {
       </div>
 
       <div className="text-center pt-4 border-t border-gray-200">
-        <p className="text-xs text-gray-600 mb-1">Thank you for shopping with {siteName}!</p>
-        <p className="text-[10px] text-gray-400">For queries, contact: support@autospares.in | +91 1800-123-4567</p>
+        <p className="text-xs text-gray-600 mb-1">Thank you for shopping with {companyName}!</p>
+        <p className="text-[10px] text-gray-400">
+          For queries, contact: {companyEmail} | {companyPhone}
+          {companyWebsite && ` | ${companyWebsite}`}
+        </p>
       </div>
     </div>
   );

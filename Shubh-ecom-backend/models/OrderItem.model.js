@@ -14,6 +14,12 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Product snapshot fields (immutable) - captured at order time
+    productName: { type: String, required: true, immutable: true },
+    productSlug: { type: String, immutable: true },
+    productImage: { type: String, immutable: true }, // Primary image URL
+    productDescription: { type: String, immutable: true }, // Short description
+
     sku: { type: String, immutable: true },
     hsnCode: { type: String, immutable: true },
 
@@ -56,6 +62,10 @@ orderItemSchema.index({ productId: 1 });
 const IMMUTABLE_FIELDS = [
   'orderId',
   'productId',
+  'productName',
+  'productSlug',
+  'productImage',
+  'productDescription',
   'sku',
   'hsnCode',
   'quantity',

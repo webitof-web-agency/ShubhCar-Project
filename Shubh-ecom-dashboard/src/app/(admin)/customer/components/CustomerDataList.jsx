@@ -23,6 +23,8 @@ import {
   Placeholder
 } from 'react-bootstrap'
 import FormErrorModal from '@/components/forms/FormErrorModal'
+import DataTable from '@/components/shared/DataTable'
+import StatusToggle from '@/components/shared/StatusToggle'
 
 
 const CustomerDataList = ({ defaultFilter = 'all' }) => {
@@ -792,13 +794,11 @@ const CustomerDataList = ({ defaultFilter = 'all' }) => {
                           </Badge>
                         </td>
                         <td className="text-center">
-                          <Form.Check
-                            type="switch"
-                            id={`status-toggle-${customer._id}`}
+                          <StatusToggle
                             checked={customer.status === 'active'}
                             onChange={() => handleToggleStatus(customer)}
-                            disabled={togglingStatusId === customer._id}
-                            label={togglingStatusId === customer._id ? 'Updating...' : customer.status === 'active' ? 'Active' : 'Inactive'}
+                            loading={togglingStatusId === customer._id}
+                            label={customer.status === 'active' ? 'Active' : 'Inactive'}
                           />
                         </td>
                         <td>

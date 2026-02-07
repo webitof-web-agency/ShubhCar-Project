@@ -1,12 +1,13 @@
 'use client'
 import PageTItle from '@/components/PageTItle'
-import { Card, CardBody, Col, Row, Spinner, Table, Button, Form, Modal, Badge } from 'react-bootstrap'
+import{ Card, CardBody, Col, Row, Spinner, Button, Form, Modal, Badge } from 'react-bootstrap'
 import { entriesAPI } from '@/helpers/entriesApi'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import { toast } from 'react-toastify'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import DataTable from '@/components/shared/DataTable'
 const escapeCsvValue = (value) => {
     const text = value == null ? '' : String(value)
     return `"${text.replace(/"/g, '""')}"`
@@ -260,55 +261,43 @@ const EntriesPage = () => {
                             {loading ? (
                                 <div className="text-center py-5"><Spinner animation="border" /></div>
                             ) : (
-                                <div className="table-responsive">
-                                    <Table hover responsive className="table-nowrap mb-0 align-middle">
-                                        <thead className="bg-light">
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Name</th>
-                                                <th>Email</th>
-                                                <th>Subject</th>
-                                                <th>Status</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {entries.map((entry) => (
-                                                <tr key={entry._id}>
-                                                    <td>
-                                                        {new Date(entry.createdAt).toLocaleDateString()}
-                                                        <br />
-                                                        <small className="text-muted">{new Date(entry.createdAt).toLocaleTimeString()}</small>
-                                                    </td>
-                                                    <td>
-                                                        {entry.name}
-                                                        {entry.isGuest && <Badge bg="secondary" className="ms-1" style={{ fontSize: '10px' }}>Guest</Badge>}
-                                                    </td>
-                                                    <td>{entry.email}</td>
-                                                    <td>{entry.subject || '-'}</td>
-                                                    <td>
-                                                        <Badge bg={entry.status === 'new' ? 'danger' : entry.status === 'read' ? 'info' : 'success'}>
-                                                            {entry.status?.toUpperCase()}
-                                                        </Badge>
-                                                    </td>
-                                                    <td>
-                                                        <Button size="sm" variant="light" className="me-1" onClick={() => handleView(entry)}>
-                                                            <IconifyIcon icon="mdi:eye" />
-                                                        </Button>
-                                                        <Button size="sm" variant="soft-danger" onClick={() => handleDelete(entry._id)}>
-                                                            <IconifyIcon icon="mdi:trash-can-outline" />
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {entries.length === 0 && (
-                                                <tr>
-                                                    <td colSpan="6" className="text-center py-4">No entries found matching filters</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </Table>
-                                </div>
+                        <DataTable
+                          columns={[
+                            { key: 'date', label: 'Date', render: (entry) => (
+                              <>
+                                {new Date(entry.createdAt).toLocaleDateString()}
+                                <br />
+                                <small className="text-muted">{new Date(entry.createdAt).toLocaleTimeString()}</small>
+                              </>
+                            )},
+                            { key: 'name', label: 'Name', render: (entry) => (
+                              <>
+                                {entry.name}
+                                {entry.isGuest && <Badge bg="secondary" className="ms-1" style={{ fontSize: '10px' }}>Guest</Badge>}
+                              </>
+                            )},
+                            { key: 'email', label: 'Email', render: (entry) => entry.email },
+                            { key: 'subject', label: 'Subject', render: (entry) => entry.subject || '-' },
+                            { key: 'status', label: 'Status', render: (entry) => (
+                              <Badge bg={entry.status === 'new' ? 'danger' : entry.status === 'read' ? 'info' : 'success'}>
+                                {entry.status?.toUpperCase()}
+                              </Badge>
+                            )},
+                            { key: 'actions', label: 'Action', render: (entry) => (
+                              <>
+                                <Button size="sm" variant="light" className="me-1" onClick={() => handleView(entry)}>
+                                  <IconifyIcon icon="mdi:eye" />
+                                </Button>
+                                <Button size="sm" variant="soft-danger" onClick={() => handleDeleteClick(entry._id)}>
+                                  <IconifyIcon icon="mdi:trash-can-outline" />
+                                </Button>
+                              </>
+                            )}
+                          ]}
+                          data={entries}
+                          loading={loading}
+                          emptyMessage="No entries found"
+                        />
                             )}
                         </CardBody>
                     </Card>
@@ -352,26 +341,43 @@ const EntriesPage = () => {
                             <Row className="g-3">
                                 <Col md={4}>
                                     <div className="p-2 border rounded">
-                                        <small className="d-block text-muted">IP Address</small>
-                                        <strong>{viewEntry.ip || 'N/A'}</strong>
+                                        <small className="d-block text-muted mb-1">IP Address</small>
+                                        <div className="d-flex flex-column gap-1 px-50">
+                                            {(viewEntry.ip || 'N/A').split(',').map((ip, idx) => (
+                                                <Badge 
+                                                    key={idx} 
+                                                    bg="light" 
+                                                    text="dark" 
+                                                    className="text-start px-10"
+                                                    style={{ 
+                                                        wordBreak: 'break-all', 
+                                                        fontSize: '11px',
+                                                        fontFamily: 'monospace',
+                                                        fontWeight: 'normal'
+                                                    }}
+                                                >
+                                                    {ip.trim()}
+                                                </Badge>
+                                            ))}
+                                        </div>
                                     </div>
                                 </Col>
                                 <Col md={4}>
                                     <div className="p-2 border rounded">
                                         <small className="d-block text-muted">Browser</small>
-                                        <strong>{viewEntry.browser || 'N/A'}</strong>
+                                        <strong style={{ wordBreak: 'break-word', fontSize: '14px' }}>{viewEntry.browser || 'N/A'}</strong>
                                     </div>
                                 </Col>
                                 <Col md={4}>
                                     <div className="p-2 border rounded">
                                         <small className="d-block text-muted">OS</small>
-                                        <strong>{viewEntry.os || 'N/A'}</strong>
+                                        <strong style={{ wordBreak: 'break-word', fontSize: '14px' }}>{viewEntry.os || 'N/A'}</strong>
                                     </div>
                                 </Col>
                                 <Col md={12}>
                                     <div className="p-2 border rounded">
                                         <small className="d-block text-muted">User Agent</small>
-                                        <code className="small">{viewEntry.userAgent || 'N/A'}</code>
+                                        <code className="small" style={{ wordBreak: 'break-all', display: 'block', whiteSpace: 'normal' }}>{viewEntry.userAgent || 'N/A'}</code>
                                     </div>
                                 </Col>
                             </Row>

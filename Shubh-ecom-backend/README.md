@@ -60,3 +60,11 @@ Explicitly, this backend does **NOT** handle:
 - **Frontend Rendering**: It is a headless API.
 - **Image Processing**: Handled by CDNs (Uploadcare/AWS S3) or separate microservice.
 - **User Analytics**: Offloaded to Posthog/Google Analytics (backend only tracks business events).
+
+## 📧 Email Service
+- **Provider**: Gmail SMTP (configured via `.env`)
+- **Transport**: `nodemailer`
+- **Templates**: Dynamic, stored in MongoDB (`EmailTemplate` collection).
+- **Workflow**:
+  - `EmailNotificationService` handles template hydration and sending.
+  - Templates supported: `auth_email_verification`, `forgot_password_otp`, `order_invoice`, `credit_note`.

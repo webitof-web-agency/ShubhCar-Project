@@ -155,7 +155,7 @@ const ShipmentTracking = ({ shipments = [], items = [], onUpsertShipment, saving
   }
 
   const itemLabel = (item) => {
-    const name = item.productId?.name || 'Product'
+    const name = item.productName || '[Product Deleted]'
     return name
   }
 

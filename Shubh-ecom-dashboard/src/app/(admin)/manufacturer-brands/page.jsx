@@ -1,6 +1,6 @@
 'use client'
 import PageTItle from '@/components/PageTItle'
-import { Card, CardBody, Col, Row, Spinner, Table, Button, Form, Modal, Pagination } from 'react-bootstrap'
+import { Card, CardBody, Col, Row, Spinner, Button, Form, Modal, Pagination } from 'react-bootstrap'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL, API_ORIGIN } from '@/helpers/apiBase'
@@ -8,6 +8,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import { mediaAPI } from '@/helpers/mediaApi'
 import DropzoneFormInput from '@/components/form/DropzoneFormInput'
 import MediaPickerModal from '@/components/media/MediaPickerModal'
+import DataTable from '@/components/shared/DataTable'
 
 const ManufacturerBrandsPage = () => {
     const { data: session } = useSession()
@@ -172,71 +173,38 @@ const ManufacturerBrandsPage = () => {
                             <div className="d-flex justify-content-end mb-3">
                                 <Button variant="primary" onClick={() => handleOpenModal()}>Add Manufacturer Brand</Button>
                             </div>
-                            <div className="table-responsive">
-                                <Table hover responsive className="table-nowrap mb-0 align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Logo</th>
-                                            <th>Name</th>
-                                            <th>Slug</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {brands.map((item) => (
-                                            <tr key={item._id}>
-                                                <td>
-                                                    {item.logo ? (
-                                                        <img src={resolveMediaUrl(item.logo)} alt={item.name} className="rounded border" style={{ width: 40, height: 40, objectFit: 'cover' }} />
-                                                    ) : (
-                                                        <span className="text-muted">-</span>
-                                                    )}
-                                                </td>
-                                                <td>{item.name}</td>
-                                                <td>{item.slug || '-'}</td>
-                                                <td>
-                                                    <span
-                                                        className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active'
-                                                            ? 'bg-success-subtle text-success'
-                                                            : 'bg-danger-subtle text-danger'
-                                                            }`}
-                                                        style={{
-                                                            backgroundColor: item.status === 'active' ? '#e6fffa' : '#fff5f5',
-                                                            color: item.status === 'active' ? '#00b894' : '#ff7675',
-                                                        }}
-                                                    >
-                                                        {item.status === 'active' ? 'Active' : 'Inactive'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="link"
-                                                            className="p-0 text-primary"
-                                                            onClick={() => handleOpenModal(item)}
-                                                            title="Edit"
-                                                        >
-                                                            <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="link"
-                                                            className="p-0 text-danger"
-                                                            onClick={() => handleDelete(item._id)}
-                                                            title="Delete"
-                                                        >
-                                                            <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {brands.length === 0 && !loading && <tr><td colSpan="5" className="text-center">No manufacturer brands found</td></tr>}
-                                    </tbody>
-                                </Table>
-                            </div>
+                            <DataTable
+                              columns={[
+                                { key: 'logo', label: 'Logo', render: (item) => (
+                                  item.logo ? (
+                                    <img src={resolveMediaUrl(item.logo)} alt={item.name} className="rounded border" style={{ width: 40, height: 40, objectFit: 'cover' }} />
+                                  ) : <span className="text-muted">-</span>
+                                )},
+                                { key: 'name', label: 'Name', render: (item) => item.name },
+                                { key: 'slug', label: 'Slug', render: (item) => item.slug || '-' },
+                                { key: 'status', label: 'Status', render: (item) => (
+                                  <span
+                                    className={`badge px-3 py-2 rounded-pill fs-12 fw-medium ${item.status === 'active' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}
+                                    style={{ backgroundColor: item.status === 'active' ? '#e6fffa' : '#fff5f5', color: item.status === 'active' ? '#00b894' : '#ff7675' }}
+                                  >
+                                    {item.status === 'active' ? 'Active' : 'Inactive'}
+                                  </span>
+                                )},
+                                { key: 'actions', label: 'Action', render: (item) => (
+                                  <div className="d-flex gap-2">
+                                    <Button size="sm" variant="link" className="p-0 text-primary" onClick={() => handleOpenModal(item)} title="Edit">
+                                      <IconifyIcon icon="solar:pen-new-square-bold-duotone" width={20} height={20} />
+                                    </Button>
+                                    <Button size="sm" variant="link" className="p-0 text-danger" onClick={() => handleDelete(item._id)} title="Delete">
+                                      <IconifyIcon icon="solar:trash-bin-trash-bold" width={20} height={20} />
+                                    </Button>
+                                  </div>
+                                )}
+                              ]}
+                              data={brands}
+                              loading={loading && brands.length === 0}
+                              emptyMessage="No manufacturer brands found"
+                            />
 
                             {/* Pagination Controls */}
                             {totalPages > 1 && (
