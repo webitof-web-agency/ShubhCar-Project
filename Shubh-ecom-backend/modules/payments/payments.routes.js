@@ -4,7 +4,6 @@ const express = require('express');
    MIDDLEWARES
 ======================= */
 const auth = require('../../middlewares/auth.middleware');
-const authorize = require('../../middlewares/authorize.middleware');
 const ROLES = require('../../constants/roles');
 const validate = require('../../middlewares/validate.middleware');
 const { paymentLimiter } = require('../../middlewares/rateLimiter.middleware');
@@ -56,8 +55,7 @@ router.get('/methods', controller.getMethods);
 router.post(
   '/initiate',
   paymentLimiter,
-  auth(),
-  authorize([ROLES.CUSTOMER,  ROLES.ADMIN]),
+  auth([ROLES.CUSTOMER, ROLES.ADMIN]),
   validate(initiatePaymentSchema),
   controller.initiate,
 );
@@ -85,8 +83,7 @@ router.post(
 router.post(
   '/retry',
   paymentLimiter,
-  auth(),
-  authorize([ROLES.CUSTOMER, ROLES.ADMIN]),
+  auth([ROLES.CUSTOMER, ROLES.ADMIN]),
   validate(retryPaymentSchema),
   controller.retry,
 );
@@ -135,13 +132,16 @@ router.post(
  *                 data:
  *                   $ref: '#/components/schemas/PaymentIntent'
  */
-router.get('/:paymentId/status', auth(), authorize([ROLES.CUSTOMER, ROLES.ADMIN]), controller.getStatus);
+router.get(
+  '/:paymentId/status',
+  auth([ROLES.CUSTOMER, ROLES.ADMIN]),
+  controller.getStatus,
+);
 
 router.post(
   '/:paymentId/confirm',
   paymentLimiter,
-  auth(),
-  authorize([ROLES.CUSTOMER, ROLES.ADMIN]),
+  auth([ROLES.CUSTOMER, ROLES.ADMIN]),
   controller.confirmPayment,
 );
 /**
@@ -163,8 +163,7 @@ router.post(
 router.post(
   '/admin/:paymentId/refund',
   paymentLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
   validate(refundApprovalSchema),
   controller.adminApproveRefund,
 );
@@ -197,8 +196,7 @@ router.post(
 router.get(
   '/admin/list',
   paymentLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
   controller.adminList,
 );
 /**

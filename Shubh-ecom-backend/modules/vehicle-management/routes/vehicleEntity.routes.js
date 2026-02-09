@@ -1,8 +1,17 @@
 const express = require('express');
 const auth = require('../../../middlewares/auth.middleware');
+const validate = require('../../../middlewares/validate.middleware');
 const ROLES = require('../../../constants/roles');
 const controller = require('../controllers/vehicle.controller');
 const validateId = require('../../../middlewares/objectId.middleware');
+const {
+  vehicleListQuerySchema,
+  vehicleExportQuerySchema,
+  vehicleAvailableYearsQuerySchema,
+  vehicleAvailableAttributesQuerySchema,
+  vehicleCreateSchema,
+  vehicleUpdateSchema,
+} = require('../vehicleManagement.validator');
 
 const router = express.Router();
 
@@ -15,7 +24,7 @@ const router = express.Router();
  *     responses:
  *       200: { description: Vehicles }
  */
-router.get('/', controller.list);
+router.get('/', validate(vehicleListQuerySchema, 'query'), controller.list);
 
 /**
  * @openapi
@@ -27,7 +36,12 @@ router.get('/', controller.list);
  *     responses:
  *       200: { description: Export file/url }
  */
-router.get('/export', auth([ROLES.ADMIN]), controller.export);
+router.get(
+  '/export',
+  auth([ROLES.ADMIN]),
+  validate(vehicleExportQuerySchema, 'query'),
+  controller.export,
+);
 
 /**
  * @openapi
@@ -38,7 +52,11 @@ router.get('/export', auth([ROLES.ADMIN]), controller.export);
  *     responses:
  *       200: { description: Years }
  */
-router.get('/filters/years', controller.availableYears);
+router.get(
+  '/filters/years',
+  validate(vehicleAvailableYearsQuerySchema, 'query'),
+  controller.availableYears,
+);
 
 /**
  * @openapi
@@ -49,7 +67,11 @@ router.get('/filters/years', controller.availableYears);
  *     responses:
  *       200: { description: Attributes }
  */
-router.get('/filters/attributes', controller.availableAttributes);
+router.get(
+  '/filters/attributes',
+  validate(vehicleAvailableAttributesQuerySchema, 'query'),
+  controller.availableAttributes,
+);
 
 /**
  * @openapi
@@ -73,7 +95,7 @@ router.get('/filters/attributes', controller.availableAttributes);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', auth([ROLES.ADMIN]), controller.create);
+router.post('/', auth([ROLES.ADMIN]), validate(vehicleCreateSchema), controller.create);
 
 /**
  * @openapi
@@ -134,7 +156,13 @@ router.get('/:id', validateId('id'), controller.get);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(vehicleUpdateSchema),
+  controller.update,
+);
 
 /**
  * @openapi

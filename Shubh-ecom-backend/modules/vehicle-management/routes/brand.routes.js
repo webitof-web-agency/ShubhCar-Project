@@ -1,8 +1,14 @@
 const express = require('express');
 const auth = require('../../../middlewares/auth.middleware');
+const validate = require('../../../middlewares/validate.middleware');
 const ROLES = require('../../../constants/roles');
 const controller = require('../controllers/brand.controller');
 const validateId = require('../../../middlewares/objectId.middleware');
+const {
+  brandListQuerySchema,
+  brandCreateSchema,
+  brandUpdateSchema,
+} = require('../vehicleManagement.validator');
 
 const router = express.Router();
 
@@ -15,7 +21,7 @@ const router = express.Router();
  *     responses:
  *       200: { description: Brands }
  */
-router.get('/', controller.list);
+router.get('/', validate(brandListQuerySchema, 'query'), controller.list);
 
 /**
  * @openapi
@@ -37,7 +43,7 @@ router.get('/', controller.list);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', auth([ROLES.ADMIN]), controller.create);
+router.post('/', auth([ROLES.ADMIN]), validate(brandCreateSchema), controller.create);
 
 /**
  * @openapi
@@ -79,7 +85,13 @@ router.get('/:id', validateId('id'), controller.get);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(brandUpdateSchema),
+  controller.update,
+);
 
 /**
  * @openapi

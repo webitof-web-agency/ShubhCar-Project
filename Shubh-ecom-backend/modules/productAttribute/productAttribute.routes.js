@@ -5,6 +5,7 @@ const controller = require('./productAttribute.controller');
 const { upsertSchema } = require('./productAttribute.validator');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
+const ROLES = require('../../constants/roles');
 
 const router = express.Router();
 
@@ -50,7 +51,7 @@ router.get('/:productId/attributes', auth(), validateId('productId'), controller
  *     responses:
  *       200: { description: Upserted }
  */
-router.put('/:productId/attributes/:attributeId', adminLimiter, auth(), validateId('productId'), validateId('attributeId'), validate(upsertSchema), controller.upsert);
+router.put('/:productId/attributes/:attributeId', adminLimiter, auth([ROLES.ADMIN]), validateId('productId'), validateId('attributeId'), validate(upsertSchema), controller.upsert);
 
 /**
  * @openapi
@@ -71,6 +72,6 @@ router.put('/:productId/attributes/:attributeId', adminLimiter, auth(), validate
  *     responses:
  *       200: { description: Deleted }
  */
-router.delete('/:productId/attributes/:attributeId', adminLimiter, auth(), validateId('productId'), validateId('attributeId'), controller.remove);
+router.delete('/:productId/attributes/:attributeId', adminLimiter, auth([ROLES.ADMIN]), validateId('productId'), validateId('attributeId'), controller.remove);
 
 module.exports = router;

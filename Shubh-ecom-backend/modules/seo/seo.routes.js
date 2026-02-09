@@ -1,11 +1,13 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const controller = require('./seo.controller');
 const ROLES = require('../../constants/roles');
 const cacheRead = require('../../middlewares/cacheRead');
 const keys = require('../../lib/cache/keys');
+const { upsertSeoSchema, resolveSeoQuerySchema } = require('./seo.validator');
 
 const router = express.Router();
 
@@ -29,7 +31,13 @@ const router = express.Router();
  *     responses:
  *       200: { description: Upserted }
  */
-router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.upsert);
+router.post(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(upsertSeoSchema),
+  controller.upsert,
+);
 
 /**
  * @openapi
@@ -106,6 +114,7 @@ router.delete('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), contr
  */
 router.get(
   '/resolve',
+  validate(resolveSeoQuerySchema, 'query'),
   cacheRead({
     key: (req) => keys.cms.seo(req.query.slug || keys.hashQuery(req.query)),
     ttl: 1800,

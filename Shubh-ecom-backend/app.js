@@ -37,7 +37,7 @@ app.use(
         'default-src': ["'self'"],
         'base-uri': ["'self'"],
         'frame-ancestors': ["'none'"],
-        'connect-src': ["'self'", env.FRONTEND_ORIGIN, env.ADMIN_ORIGIN],
+        'connect-src': ["'self'", env.FRONTEND_ORIGIN, env.ADMIN_ORIGIN ,"'http://localhost:3000'"],
         'img-src': ["'self'", 'data:', 'blob:'],
         'script-src': ["'self'"],
         'style-src': ["'self'", "'unsafe-inline'"],
@@ -55,7 +55,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: [env.FRONTEND_ORIGIN, env.ADMIN_ORIGIN, env.BACKEND_ORIGIN],
+    origin: [env.FRONTEND_ORIGIN, env.ADMIN_ORIGIN, env.BACKEND_ORIGIN , "http://localhost:3000"],
     credentials: false, // JWT in headers/localStorage; no cookies => no credentialed requests needed
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [

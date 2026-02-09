@@ -1,7 +1,13 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
+const validateId = require('../../middlewares/objectId.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./entries.controller');
+const {
+  createEntrySchema,
+  listEntriesQuerySchema,
+} = require('./entries.validator');
 
 const router = express.Router();
 
@@ -27,7 +33,7 @@ const router = express.Router();
  *     responses:
  *       201: { description: Entry created }
  */
-router.post('/', controller.create);
+router.post('/', validate(createEntrySchema), controller.create);
 
 /**
  * @openapi
@@ -51,7 +57,12 @@ router.get('/stats', auth([ROLES.ADMIN]), controller.stats);
  *     responses:
  *       200: { description: Entries }
  */
-router.get('/', auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(listEntriesQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -68,7 +79,7 @@ router.get('/', auth([ROLES.ADMIN]), controller.list);
  *     responses:
  *       200: { description: Entry }
  */
-router.get('/:id', auth([ROLES.ADMIN]), controller.get);
+router.get('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.get);
 
 /**
  * @openapi
@@ -85,7 +96,7 @@ router.get('/:id', auth([ROLES.ADMIN]), controller.get);
  *     responses:
  *       200: { description: Deleted }
  */
-router.delete('/:id', auth([ROLES.ADMIN]), controller.remove);
+router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 
 /**
  * @openapi
@@ -102,6 +113,11 @@ router.delete('/:id', auth([ROLES.ADMIN]), controller.remove);
  *     responses:
  *       200: { description: Marked read }
  */
-router.patch('/:id/read', auth([ROLES.ADMIN]), controller.markRead);
+router.patch(
+  '/:id/read',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  controller.markRead,
+);
 
 module.exports = router;

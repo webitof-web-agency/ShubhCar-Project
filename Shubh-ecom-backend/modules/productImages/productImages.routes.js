@@ -1,9 +1,15 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const controller = require('./productImages.controller');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const ROLES = require('../../constants/roles');
+const {
+  listProductImagesQuerySchema,
+  createProductImageSchema,
+  updateProductImageSchema,
+} = require('./productImages.validator');
 
 const router = express.Router();
 
@@ -17,7 +23,13 @@ const router = express.Router();
  *     responses:
  *       200: { description: Images list }
  */
-router.get('/', adminLimiter, auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listProductImagesQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -58,7 +70,13 @@ router.get('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controll
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(createProductImageSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -85,7 +103,14 @@ router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updateProductImageSchema),
+  controller.update,
+);
 
 /**
  * @openapi

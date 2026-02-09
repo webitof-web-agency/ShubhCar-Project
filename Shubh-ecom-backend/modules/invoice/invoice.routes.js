@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 const Invoice = require('../../models/InvoiceSchema');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
+const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const ROLES = require('../../constants/roles');
 const PDFDocument = require('pdfkit');
 const invoiceService = require('./invoice.service');
 const Order = require('../../models/Order.model');
+const { listInvoicesQuerySchema, pdfQuerySchema } = require('./invoice.validator');
 
 const streamInvoicePdf = (invoice, res, { download = false } = {}) => {
   const doc = new PDFDocument({ margin: 50 });
@@ -83,7 +86,12 @@ const streamInvoicePdf = (invoice, res, { download = false } = {}) => {
  *       200:
  *         description: Invoices with pagination
  */
-router.get('/', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
+router.get(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listInvoicesQuerySchema, 'query'),
+  async (req, res) => {
   try {
     const { page = 1, limit = 50, type } = req.query;
     
@@ -128,7 +136,12 @@ router.get('/', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
  *     responses:
  *       200: { description: Invoice }
  */
-router.get('/:id', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
+router.get(
+  '/:id',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id).lean();
 
@@ -162,7 +175,13 @@ router.get('/:id', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
  *       200:
  *         description: PDF stream
  */
-router.get('/:id/pdf', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
+router.get(
+  '/:id/pdf',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(pdfQuerySchema, 'query'),
+  async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id).lean();
     if (!invoice) {
@@ -191,7 +210,12 @@ router.get('/:id/pdf', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
  *     responses:
  *       200: { description: Invoice }
  */
-router.get('/order/:orderId', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
+router.get(
+  '/order/:orderId',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('orderId'),
+  async (req, res) => {
   try {
     const invoice = await Invoice.findOne({ orderId: req.params.orderId }).lean();
 
@@ -225,7 +249,13 @@ router.get('/order/:orderId', adminLimiter, auth([ROLES.ADMIN]), async (req, res
  *       200:
  *         description: PDF stream
  */
-router.get('/order/:orderId/pdf', adminLimiter, auth([ROLES.ADMIN]), async (req, res) => {
+router.get(
+  '/order/:orderId/pdf',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('orderId'),
+  validate(pdfQuerySchema, 'query'),
+  async (req, res) => {
   try {
     let invoice = await Invoice.findOne({ orderId: req.params.orderId }).lean();
 

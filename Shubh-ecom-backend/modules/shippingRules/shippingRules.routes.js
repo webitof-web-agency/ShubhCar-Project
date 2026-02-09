@@ -1,8 +1,14 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./shippingRules.controller');
 const validateId = require('../../middlewares/objectId.middleware');
+const {
+  listShippingRulesQuerySchema,
+  createShippingRuleSchema,
+  updateShippingRuleSchema,
+} = require('./shippingRules.validator');
 
 const router = express.Router();
 
@@ -16,7 +22,12 @@ const router = express.Router();
  *     responses:
  *       200: { description: Shipping rules }
  */
-router.get('/', auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(listShippingRulesQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -39,7 +50,12 @@ router.get('/', auth([ROLES.ADMIN]), controller.list);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(createShippingRuleSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -62,7 +78,13 @@ router.post('/', auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updateShippingRuleSchema),
+  controller.update,
+);
 
 /**
  * @openapi

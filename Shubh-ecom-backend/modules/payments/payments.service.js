@@ -250,7 +250,7 @@ class PaymentsService {
    * List all payments (Admin)
    */
   async adminList(actor, query = {}) {
-    // Permission check if needed, though routes handle authorize
+    // Permission check if needed, though routes handle role access control
     const { status, limit, page } = query;
     const filter = {};
     if (status) filter.status = status;

@@ -1,12 +1,15 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const controller = require('./analytics.controller');
 const ROLES = require('../../constants/roles');
 const cacheRead = require('../../middlewares/cacheRead');
 const cacheKeys = require('../../lib/cache/keys');
+const { analyticsQuerySchema } = require('./analytics.validator');
 
 const router = express.Router();
+router.use(validate(analyticsQuerySchema, 'query'));
 
 /**
  * @openapi

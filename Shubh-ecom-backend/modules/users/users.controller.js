@@ -75,7 +75,7 @@ exports.adminLogoutAll = asyncHandler(async (req, res) => {
   return res.ok(data, 'User logged out from all sessions');
 });
 exports.adminForcePasswordReset = asyncHandler(async (req, res) => {
-  const { newPassword } = req.body;
+  const newPassword = req.body.newPassword || req.body.password;
   if (!newPassword) {
     return res.badRequest('New password is required');
   }

@@ -1,9 +1,16 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const controller = require('./salesReports.controller');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const ROLES = require('../../constants/roles');
+const {
+  summaryQuerySchema,
+  listSalesReportsQuerySchema,
+  createSalesReportSchema,
+  updateSalesReportSchema,
+} = require('./salesReports.validator');
 
 const router = express.Router();
 
@@ -17,7 +24,13 @@ const router = express.Router();
  *     responses:
  *       200: { description: Summary }
  */
-router.get('/summary', adminLimiter, auth([ROLES.ADMIN]), controller.summary);
+router.get(
+  '/summary',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(summaryQuerySchema, 'query'),
+  controller.summary,
+);
 
 /**
  * @openapi
@@ -29,7 +42,13 @@ router.get('/summary', adminLimiter, auth([ROLES.ADMIN]), controller.summary);
  *     responses:
  *       200: { description: Reports }
  */
-router.get('/', adminLimiter, auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listSalesReportsQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -70,7 +89,13 @@ router.get('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controll
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(createSalesReportSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -97,7 +122,14 @@ router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updateSalesReportSchema),
+  controller.update,
+);
 
 /**
  * @openapi

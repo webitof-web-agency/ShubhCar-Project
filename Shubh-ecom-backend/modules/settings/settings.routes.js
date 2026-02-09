@@ -1,7 +1,12 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./settings.controller');
+const {
+  listSettingsQuerySchema,
+  updateSettingsSchema,
+} = require('./settings.validator');
 
 const router = express.Router();
 
@@ -26,7 +31,12 @@ router.get('/public', controller.listPublic);
  *     responses:
  *       200: { description: Settings }
  */
-router.get('/', auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(listSettingsQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -44,6 +54,6 @@ router.get('/', auth([ROLES.ADMIN]), controller.list);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/', auth([ROLES.ADMIN]), controller.updateBulk);
+router.put('/', auth([ROLES.ADMIN]), validate(updateSettingsSchema), controller.updateBulk);
 
 module.exports = router;

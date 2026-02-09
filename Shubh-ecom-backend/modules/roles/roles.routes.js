@@ -1,8 +1,10 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
-const authorize = require('../../middlewares/authorize.middleware');
+const validate = require('../../middlewares/validate.middleware');
+const validateId = require('../../middlewares/objectId.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./roles.controller');
+const { createRoleSchema, updateRoleSchema } = require('./roles.validator');
 
 const router = express.Router();
 
@@ -16,7 +18,7 @@ const router = express.Router();
  *     responses:
  *       200: { description: Roles }
  */
-router.get('/', auth(), authorize([ROLES.ADMIN]), controller.list);
+router.get('/', auth([ROLES.ADMIN]), controller.list);
 
 /**
  * @openapi
@@ -38,7 +40,12 @@ router.get('/', auth(), authorize([ROLES.ADMIN]), controller.list);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', auth(), authorize([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(createRoleSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -55,7 +62,12 @@ router.post('/', auth(), authorize([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Role }
  */
-router.get('/:roleId', auth(), authorize([ROLES.ADMIN]), controller.get);
+router.get(
+  '/:roleId',
+  auth([ROLES.ADMIN]),
+  validateId('roleId'),
+  controller.get,
+);
 
 /**
  * @openapi
@@ -81,7 +93,13 @@ router.get('/:roleId', auth(), authorize([ROLES.ADMIN]), controller.get);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:roleId', auth(), authorize([ROLES.ADMIN]), controller.update);
+router.put(
+  '/:roleId',
+  auth([ROLES.ADMIN]),
+  validateId('roleId'),
+  validate(updateRoleSchema),
+  controller.update,
+);
 
 /**
  * @openapi
@@ -98,6 +116,11 @@ router.put('/:roleId', auth(), authorize([ROLES.ADMIN]), controller.update);
  *     responses:
  *       200: { description: Deleted }
  */
-router.delete('/:roleId', auth(), authorize([ROLES.ADMIN]), controller.remove);
+router.delete(
+  '/:roleId',
+  auth([ROLES.ADMIN]),
+  validateId('roleId'),
+  controller.remove,
+);
 
 module.exports = router;

@@ -7,6 +7,16 @@ jest.mock('../../modules/analytics/analytics.controller', () => ({
   topProducts: jest.fn((req, res) => res.ok({ top: true })),
   inventory: jest.fn((req, res) => res.ok({ low: true })),
   reviews: jest.fn((req, res) => res.ok({ reviews: true })),
+  dashboardStats: jest.fn((req, res) => res.ok({ dashboard: true })),
+  revenueChartData: jest.fn((req, res) => res.ok({ chart: true })),
+  salesByState: jest.fn((req, res) => res.ok({ state: true })),
+  salesByCity: jest.fn((req, res) => res.ok({ city: true })),
+  repeatCustomers: jest.fn((req, res) => res.ok({ repeat: true })),
+  fulfillment: jest.fn((req, res) => res.ok({ fulfillment: true })),
+  orderFunnel: jest.fn((req, res) => res.ok({ funnel: true })),
+  topCategories: jest.fn((req, res) => res.ok({ categories: true })),
+  topBrands: jest.fn((req, res) => res.ok({ brands: true })),
+  inventoryTurnover: jest.fn((req, res) => res.ok({ turnover: true })),
 }));
 jest.mock('../../utils/jwt', () => ({
   verifyToken: jest.fn(),

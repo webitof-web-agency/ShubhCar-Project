@@ -1,8 +1,10 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./tax.controller');
 const validateId = require('../../middlewares/objectId.middleware');
+const { listTaxQuerySchema, createTaxSchema, updateTaxSchema } = require('./tax.validator');
 
 const router = express.Router();
 
@@ -16,7 +18,12 @@ const router = express.Router();
  *     responses:
  *       200: { description: Tax slabs }
  */
-router.get('/slabs', auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/slabs',
+  auth([ROLES.ADMIN]),
+  validate(listTaxQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -40,7 +47,7 @@ router.get('/slabs', auth([ROLES.ADMIN]), controller.list);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/slabs', auth([ROLES.ADMIN]), controller.create);
+router.post('/slabs', auth([ROLES.ADMIN]), validate(createTaxSchema), controller.create);
 
 /**
  * @openapi
@@ -68,7 +75,13 @@ router.post('/slabs', auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/slabs/:id', auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/slabs/:id',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updateTaxSchema),
+  controller.update,
+);
 
 /**
  * @openapi

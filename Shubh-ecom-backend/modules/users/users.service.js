@@ -421,7 +421,7 @@ class UsersService {
   async adminUpdateStatus(actor, userId, payload) {
     if (actor.role !== 'admin') error('Forbidden', 403);
 
-    const allowed = ['active', 'blocked', 'suspended'];
+    const allowed = ['active', 'inactive', 'banned'];
     if (!allowed.includes(payload.status)) {
       error('Invalid status', 400);
     }

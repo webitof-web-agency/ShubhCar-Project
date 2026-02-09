@@ -1,8 +1,13 @@
 const express = require('express');
 const controller = require('./categories.controller');
+const validate = require('../../middlewares/validate.middleware');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const cacheRead = require('../../middlewares/cacheRead');
+const {
+  createCategorySchema,
+  updateCategorySchema,
+} = require('./categories.validator');
 
 const cacheKeys = require('../../lib/cache/keys');
 const catKeys = cacheKeys.catalog.categories;
@@ -31,7 +36,12 @@ const router = express.Router();
  *     responses:
  *       201: { description: Created }
  */
-router.post('/admin', adminLimiter, controller.create);
+router.post(
+  '/admin',
+  adminLimiter,
+  validate(createCategorySchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -59,7 +69,13 @@ router.post('/admin', adminLimiter, controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/admin/:id', adminLimiter, validateId('id'), controller.update);
+router.put(
+  '/admin/:id',
+  adminLimiter,
+  validateId('id'),
+  validate(updateCategorySchema),
+  controller.update,
+);
 
 /**
  * @openapi

@@ -1,8 +1,12 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./productCompatibility.controller');
 const validateId = require('../../middlewares/objectId.middleware');
+const {
+  upsertProductCompatibilitySchema,
+} = require('./productCompatibility.validator');
 
 const router = express.Router();
 
@@ -49,6 +53,12 @@ router.get('/:productId', auth([ROLES.ADMIN]), validateId('productId'), controll
  *     responses:
  *       200: { description: Saved }
  */
-router.put('/:productId', auth([ROLES.ADMIN]), validateId('productId'), controller.upsert);
+router.put(
+  '/:productId',
+  auth([ROLES.ADMIN]),
+  validateId('productId'),
+  validate(upsertProductCompatibilitySchema),
+  controller.upsert,
+);
 
 module.exports = router;

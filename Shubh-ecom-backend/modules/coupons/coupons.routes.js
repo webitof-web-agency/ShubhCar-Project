@@ -1,9 +1,15 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const controller = require('./coupons.controller');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const ROLES = require('../../constants/roles');
+const {
+  previewSchema,
+  createSchema,
+  updateSchema,
+} = require('./coupon.validator');
 
 const router = express.Router();
 
@@ -40,7 +46,7 @@ router.get('/public', controller.listPublic);
  *       200:
  *         description: Discount preview
  */
-router.post('/preview', auth(), controller.preview);
+router.post('/preview', auth(), validate(previewSchema), controller.preview);
 
 /**
  * @openapi
@@ -108,7 +114,13 @@ router.get('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controll
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(createSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -139,7 +151,14 @@ router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updateSchema),
+  controller.update,
+);
 
 /**
  * @openapi

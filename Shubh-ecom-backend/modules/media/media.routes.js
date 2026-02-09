@@ -1,10 +1,16 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const controller = require('./media.controller');
 const ROLES = require('../../constants/roles');
 const { uploadMedia } = require('../../middlewares/mediaUpload.middleware');
+const {
+  presignSchema,
+  createMediaSchema,
+  listMediaQuerySchema,
+} = require('./media.validator');
 
 const router = express.Router();
 
@@ -28,7 +34,13 @@ const router = express.Router();
  *     responses:
  *       200: { description: Presign data }
  */
-router.post('/presign', adminLimiter, auth([ROLES.ADMIN]), controller.presign);
+router.post(
+  '/presign',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(presignSchema),
+  controller.presign,
+);
 
 /**
  * @openapi
@@ -64,7 +76,13 @@ router.post('/upload', adminLimiter, auth([ROLES.ADMIN]), uploadMedia.array('fil
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(createMediaSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -76,7 +94,13 @@ router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Media list }
  */
-router.get('/', adminLimiter, auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listMediaQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi

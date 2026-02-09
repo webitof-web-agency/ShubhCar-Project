@@ -38,4 +38,76 @@ const profileUpdateSchema = Joi.object({
   password: Joi.string().min(6),
 }).min(1);
 
-module.exports = { registerUserSchema, profileUpdateSchema, adminCreateSchema };
+const adminListQuerySchema = Joi.object({
+  role: Joi.string().valid(ROLES.ADMIN, ROLES.CUSTOMER),
+  status: Joi.string().valid('active', 'inactive', 'banned'),
+  customerType: Joi.string().valid('retail', 'wholesale'),
+  verificationStatus: Joi.string().valid(
+    'not_required',
+    'pending',
+    'approved',
+    'rejected',
+  ),
+  search: Joi.string().trim().max(100).allow(''),
+  limit: Joi.number().integer().min(1).max(200).default(20),
+  page: Joi.number().integer().min(1).default(1),
+});
+
+const adminExportQuerySchema = Joi.object({
+  status: Joi.string().valid('active', 'inactive', 'banned'),
+  customerType: Joi.string().valid('retail', 'wholesale'),
+  verificationStatus: Joi.string().valid(
+    'not_required',
+    'pending',
+    'approved',
+    'rejected',
+  ),
+  search: Joi.string().trim().max(100).allow(''),
+  format: Joi.string().valid('csv', 'xlsx').default('csv'),
+});
+
+const adminStatusUpdateSchema = Joi.object({
+  status: Joi.string().valid('active', 'inactive', 'banned').required(),
+});
+
+const adminUpdateSchema = Joi.object({
+  firstName: Joi.string().min(2),
+  lastName: Joi.string().allow('', null),
+  email: Joi.string().email(),
+  phone: Joi.string()
+    .pattern(/^[6-9]\d{9}$/)
+    .optional(),
+  customerType: Joi.string().valid('retail', 'wholesale'),
+  roleId: Joi.string(),
+  status: Joi.string().valid('active', 'inactive', 'banned'),
+}).min(1);
+
+const adminForceResetPasswordSchema = Joi.object({
+  newPassword: Joi.string().min(6),
+  password: Joi.string().min(6),
+}).or('newPassword', 'password');
+
+const checkEmailAvailabilitySchema = Joi.object({
+  email: Joi.string().email().allow('', null),
+  excludeUserId: Joi.string().allow('', null),
+});
+
+const checkPhoneAvailabilitySchema = Joi.object({
+  phone: Joi.string()
+    .pattern(/^[6-9]\d{9}$/)
+    .allow('', null),
+  excludeUserId: Joi.string().allow('', null),
+});
+
+module.exports = {
+  registerUserSchema,
+  profileUpdateSchema,
+  adminCreateSchema,
+  adminListQuerySchema,
+  adminExportQuerySchema,
+  adminStatusUpdateSchema,
+  adminUpdateSchema,
+  adminForceResetPasswordSchema,
+  checkEmailAvailabilitySchema,
+  checkPhoneAvailabilitySchema,
+};

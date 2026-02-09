@@ -1,9 +1,11 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const controller = require('./inventoryLogs.controller');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const ROLES = require('../../constants/roles');
+const { listInventoryLogsQuerySchema } = require('./inventoryLogs.validator');
 
 const router = express.Router();
 
@@ -28,7 +30,13 @@ const router = express.Router();
  *       200:
  *         description: Logs list
  */
-router.get('/', adminLimiter, auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listInventoryLogsQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi

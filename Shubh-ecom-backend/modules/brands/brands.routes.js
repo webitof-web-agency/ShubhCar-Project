@@ -1,7 +1,14 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
+const validateId = require('../../middlewares/objectId.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./brands.controller');
+const {
+  listBrandsQuerySchema,
+  createBrandSchema,
+  updateBrandSchema,
+} = require('./brands.validator');
 
 const router = express.Router();
 
@@ -15,7 +22,7 @@ const router = express.Router();
  *       200:
  *         description: Brands
  */
-router.get('/', controller.list);
+router.get('/', validate(listBrandsQuerySchema, 'query'), controller.list);
 
 /**
  * @openapi
@@ -32,7 +39,7 @@ router.get('/', controller.list);
  *       200:
  *         description: Brand
  */
-router.get('/:id', controller.get);
+router.get('/:id', validateId('id'), controller.get);
 
 /**
  * @openapi
@@ -55,7 +62,7 @@ router.get('/:id', controller.get);
  *       201:
  *         description: Created
  */
-router.post('/', auth([ROLES.ADMIN]), controller.create);
+router.post('/', auth([ROLES.ADMIN]), validate(createBrandSchema), controller.create);
 
 /**
  * @openapi
@@ -82,7 +89,13 @@ router.post('/', auth([ROLES.ADMIN]), controller.create);
  *       200:
  *         description: Updated
  */
-router.put('/:id', auth([ROLES.ADMIN]), controller.update);
+router.put(
+  '/:id',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updateBrandSchema),
+  controller.update,
+);
 
 /**
  * @openapi
@@ -100,6 +113,6 @@ router.put('/:id', auth([ROLES.ADMIN]), controller.update);
  *       200:
  *         description: Deleted
  */
-router.delete('/:id', auth([ROLES.ADMIN]), controller.remove);
+router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 
 module.exports = router;

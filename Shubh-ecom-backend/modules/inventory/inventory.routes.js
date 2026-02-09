@@ -1,8 +1,14 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const ROLES = require('../../constants/roles');
 const controller = require('./inventory.controller');
+const {
+  summaryQuerySchema,
+  listProductsQuerySchema,
+  adjustStockSchema,
+} = require('./inventory.validator');
 
 const router = express.Router();
 
@@ -17,7 +23,13 @@ const router = express.Router();
  *       200:
  *         description: Summary
  */
-router.get('/summary', adminLimiter, auth([ROLES.ADMIN]), controller.summary);
+router.get(
+  '/summary',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(summaryQuerySchema, 'query'),
+  controller.summary,
+);
 
 /**
  * @openapi
@@ -37,7 +49,13 @@ router.get('/summary', adminLimiter, auth([ROLES.ADMIN]), controller.summary);
  *       200:
  *         description: Inventory list
  */
-router.get('/products', adminLimiter, auth([ROLES.ADMIN]), controller.listProducts);
+router.get(
+  '/products',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listProductsQuerySchema, 'query'),
+  controller.listProducts,
+);
 
 /**
  * @openapi
@@ -62,6 +80,12 @@ router.get('/products', adminLimiter, auth([ROLES.ADMIN]), controller.listProduc
  *       200:
  *         description: Adjustment result
  */
-router.post('/adjust', adminLimiter, auth([ROLES.ADMIN]), controller.adjustStock);
+router.post(
+  '/adjust',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(adjustStockSchema),
+  controller.adjustStock,
+);
 
 module.exports = router;

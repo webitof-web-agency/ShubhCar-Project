@@ -658,7 +658,7 @@ const AddProduct = () => {
       setSuccess(isEditMode ? 'Product updated successfully!' : 'Product created successfully!')
 
       setTimeout(() => {
-        router.push('/products/product-list')
+        router.push('/products')
       }, 2000)
 
       if (!isEditMode) {
@@ -1304,7 +1304,7 @@ const AddProduct = () => {
                   </button>
                 </Col>
                 <Col lg={6} md={4}>
-                  <Link href="/products/product-list" className="btn btn-outline-secondary w-100">
+                  <Link href="/products" className="btn btn-outline-secondary w-100">
                     Cancel
                   </Link>
                 </Col>

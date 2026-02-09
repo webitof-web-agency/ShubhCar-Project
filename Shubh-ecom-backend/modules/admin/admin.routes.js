@@ -1,9 +1,11 @@
 const express = require('express');
 const controller = require('./admin.controller');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const validateId = require('../../middlewares/objectId.middleware');
 const ROLES = require('../../constants/roles');
+const { approveWholesaleSchema } = require('./admin.validation');
 
 const router = express.Router();
 
@@ -75,6 +77,7 @@ router.post(
   adminLimiter,
   auth([ROLES.ADMIN]),
   validateId('userId'),
+  validate(approveWholesaleSchema),
   controller.reviewWholesaleUser,
 );
 

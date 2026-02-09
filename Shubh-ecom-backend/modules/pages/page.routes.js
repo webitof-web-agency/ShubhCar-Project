@@ -1,11 +1,18 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const controller = require('./page.controller');
 const ROLES = require('../../constants/roles');
 const cacheRead = require('../../middlewares/cacheRead');
 const keys = require('../../lib/cache/keys');
+const {
+  listPagesQuerySchema,
+  createPageSchema,
+  updatePageSchema,
+  resolvePageParamsSchema,
+} = require('./page.validator');
 
 const router = express.Router();
 
@@ -36,7 +43,13 @@ const router = express.Router();
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(createPageSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -48,7 +61,13 @@ router.post('/', adminLimiter, auth([ROLES.ADMIN]), controller.create);
  *     responses:
  *       200: { description: Pages }
  */
-router.get('/', adminLimiter, auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validate(listPagesQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -94,7 +113,14 @@ router.get('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controll
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(updatePageSchema),
+  controller.update,
+);
 
 /**
  * @openapi
@@ -151,6 +177,7 @@ router.delete('/:id', adminLimiter, auth([ROLES.ADMIN]), validateId('id'), contr
  */
 router.get(
   '/slug/:slug',
+  validate(resolvePageParamsSchema, 'params'),
   cacheRead({ key: (req) => keys.cms.page(req.params.slug), ttl: 1800 }),
   controller.resolve,
 );

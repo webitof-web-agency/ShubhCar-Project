@@ -1,8 +1,13 @@
 const express = require('express');
 const auth = require('../../middlewares/auth.middleware');
+const validate = require('../../middlewares/validate.middleware');
 const controller = require('./userAddresses.controller');
 const validateId = require('../../middlewares/objectId.middleware');
 const ROLES = require('../../constants/roles');
+const {
+  createUserAddressSchema,
+  updateUserAddressSchema,
+} = require('./userAddresses.validator');
 
 const router = express.Router();
 
@@ -78,7 +83,7 @@ router.get('/:id', auth(), validateId('id'), controller.get);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', auth(), controller.create);
+router.post('/', auth(), validate(createUserAddressSchema), controller.create);
 
 /**
  * @openapi
@@ -101,7 +106,13 @@ router.post('/', auth(), controller.create);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', auth(), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  auth(),
+  validateId('id'),
+  validate(updateUserAddressSchema),
+  controller.update,
+);
 
 /**
  * @openapi

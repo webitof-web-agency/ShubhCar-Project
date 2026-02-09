@@ -1,8 +1,14 @@
 const express = require('express');
 const auth = require('../../../middlewares/auth.middleware');
+const validate = require('../../../middlewares/validate.middleware');
 const ROLES = require('../../../constants/roles');
 const controller = require('../controllers/attribute.controller');
 const validateId = require('../../../middlewares/objectId.middleware');
+const {
+  attributeListQuerySchema,
+  attributeCreateSchema,
+  attributeUpdateSchema,
+} = require('../vehicleManagement.validator');
 
 const router = express.Router();
 
@@ -16,7 +22,12 @@ const router = express.Router();
  *     responses:
  *       200: { description: Attributes }
  */
-router.get('/', auth([ROLES.ADMIN]), controller.list);
+router.get(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(attributeListQuerySchema, 'query'),
+  controller.list,
+);
 
 /**
  * @openapi
@@ -28,7 +39,12 @@ router.get('/', auth([ROLES.ADMIN]), controller.list);
  *     responses:
  *       200: { description: Attributes with values }
  */
-router.get('/with-values', auth([ROLES.ADMIN]), controller.listWithValues);
+router.get(
+  '/with-values',
+  auth([ROLES.ADMIN]),
+  validate(attributeListQuerySchema, 'query'),
+  controller.listWithValues,
+);
 
 /**
  * @openapi
@@ -50,7 +66,12 @@ router.get('/with-values', auth([ROLES.ADMIN]), controller.listWithValues);
  *     responses:
  *       201: { description: Created }
  */
-router.post('/', auth([ROLES.ADMIN]), controller.create);
+router.post(
+  '/',
+  auth([ROLES.ADMIN]),
+  validate(attributeCreateSchema),
+  controller.create,
+);
 
 /**
  * @openapi
@@ -93,7 +114,13 @@ router.get('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.get);
  *     responses:
  *       200: { description: Updated }
  */
-router.put('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.update);
+router.put(
+  '/:id',
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  validate(attributeUpdateSchema),
+  controller.update,
+);
 
 /**
  * @openapi

@@ -4,11 +4,22 @@ const express = require('express');
    MIDDLEWARES
 ======================= */
 const auth = require('../../middlewares/auth.middleware');
-const authorize = require('../../middlewares/authorize.middleware');
 const validate = require('../../middlewares/validate.middleware');
+const validateId = require('../../middlewares/objectId.middleware');
 const { adminLimiter } = require('../../middlewares/rateLimiter.middleware');
 const controller = require('./users.controller');
-const { registerUserSchema, profileUpdateSchema, adminCreateSchema } = require('./user.validator');
+const {
+  registerUserSchema,
+  profileUpdateSchema,
+  adminCreateSchema,
+  adminListQuerySchema,
+  adminExportQuerySchema,
+  adminStatusUpdateSchema,
+  adminUpdateSchema,
+  adminForceResetPasswordSchema,
+  checkEmailAvailabilitySchema,
+  checkPhoneAvailabilitySchema,
+} = require('./user.validator');
 const ROLES = require('../../constants/roles');
 const multer = require('multer');
 const router = express.Router();
@@ -115,27 +126,37 @@ router.post('/logout', auth(), controller.logout);
 // Admin CRUD
 //router.post('/admin', adminLimiter, controller.create);
 //router.put('/admin/:id', adminLimiter, validate('id'), controller.update);
-router.delete('/admin/:id', adminLimiter, auth(), authorize([ROLES.ADMIN]), controller.adminDelete);
+router.delete(
+  '/admin/:id',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  validateId('id'),
+  controller.adminDelete,
+);
 
 /* =======================
    ADMIN CMS ROUTES
 ======================= */
 
-router.get('/admin/counts', adminLimiter, auth(), authorize([ROLES.ADMIN]), controller.adminGetStatusCounts);
+router.get(
+  '/admin/counts',
+  adminLimiter,
+  auth([ROLES.ADMIN]),
+  controller.adminGetStatusCounts,
+);
 
 router.get(
   '/admin/customers/export',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validate(adminExportQuerySchema, 'query'),
   controller.adminExportCustomers,
 );
 
 router.post(
   '/admin/customers/import',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
   importUpload.single('file'),
   controller.adminImportCustomers,
 );
@@ -164,15 +185,14 @@ router.post(
 router.get(
   '/admin',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validate(adminListQuerySchema, 'query'),
   controller.adminList,
 );
 router.post(
   '/admin',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
   validate(adminCreateSchema),
   controller.adminCreate,
 );
@@ -202,8 +222,8 @@ router.post(
 router.get(
   '/admin/:userId',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validateId('userId'),
   controller.adminGet,
 );
 
@@ -243,8 +263,9 @@ router.get(
 router.patch(
   '/admin/:userId/status',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validateId('userId'),
+  validate(adminStatusUpdateSchema),
   controller.adminUpdateStatus,
 );
 
@@ -253,8 +274,9 @@ router.patch(
 router.patch(
   '/admin/:userId/',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validateId('userId'),
+  validate(adminUpdateSchema),
   controller.adminUpdate,
 );
 
@@ -283,8 +305,8 @@ router.patch(
 router.post(
   '/admin/:userId/approve-wholesale',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validateId('userId'),
   controller.adminApproveWholesale,
 );
 
@@ -313,8 +335,8 @@ router.post(
 router.post(
   '/admin/:userId/logout-all',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validateId('userId'),
   controller.adminLogoutAll,
 );
 
@@ -353,8 +375,9 @@ router.post(
 router.post(
   '/admin/:userId/reset-password',
   adminLimiter,
-  auth(),
-  authorize([ROLES.ADMIN]),
+  auth([ROLES.ADMIN]),
+  validateId('userId'),
+  validate(adminForceResetPasswordSchema),
   controller.adminForcePasswordReset,
 );
 
@@ -382,7 +405,11 @@ const validationController = require('./users.validation.controller');
  *       200:
  *         description: Email availability status
  */
-router.get('/validate/email', validationController.checkEmailAvailability);
+router.get(
+  '/validate/email',
+  validate(checkEmailAvailabilitySchema, 'query'),
+  validationController.checkEmailAvailability,
+);
 
 /**
  * @openapi
@@ -403,6 +430,10 @@ router.get('/validate/email', validationController.checkEmailAvailability);
  *       200:
  *         description: Phone availability status
  */
-router.get('/validate/phone', validationController.checkPhoneAvailability);
+router.get(
+  '/validate/phone',
+  validate(checkPhoneAvailabilitySchema, 'query'),
+  validationController.checkPhoneAvailability,
+);
 
 module.exports = router;
