@@ -15,7 +15,11 @@ const fetchWithAuth = async (url, options = {}) => {
 
 export const entriesAPI = {
     list: async (params = {}, token) => {
-        const query = new URLSearchParams(params).toString();
+        // Filter out empty/null values
+        const cleanParams = Object.fromEntries(
+            Object.entries(params).filter(([_, v]) => v != null && v !== '')
+        );
+        const query = new URLSearchParams(cleanParams).toString();
         const url = `${API_BASE_URL}/entries?${query}`;
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         return fetchWithAuth(url, { headers });

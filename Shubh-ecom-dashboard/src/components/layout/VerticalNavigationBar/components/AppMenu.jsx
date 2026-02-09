@@ -82,6 +82,7 @@ const MenuItemLink = ({ item, className }) => {
     <Link
       href={item.url ?? ''}
       target={item.target}
+      prefetch={false}
       className={clsx(className, {
         disabled: item.isDisabled,
       })}>

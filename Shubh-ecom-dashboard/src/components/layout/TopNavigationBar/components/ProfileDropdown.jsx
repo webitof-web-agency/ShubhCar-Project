@@ -23,7 +23,7 @@ const ProfileDropdown = () => {
         {/* <DropdownHeader as={'h6'} className="dropdown-header">
           Welcome Gaston!
         </DropdownHeader> */}
-        <DropdownItem as={Link} href="/profile">
+        <DropdownItem as={Link} href="/profile" prefetch={false}>
           <IconifyIcon icon="bx:user-circle" className="text-muted fs-18 align-middle me-1" />
           <span className="align-middle">Profile</span>
         </DropdownItem>
@@ -44,7 +44,7 @@ const ProfileDropdown = () => {
           <span className="align-middle">Lock screen</span>
         </DropdownItem> */}
         {/* <div className="dropdown-divider my-1" /> */}
-        <DropdownItem as={Link} className=" text-danger" href="/auth/sign-in">
+        <DropdownItem as={Link} className=" text-danger" href="/auth/sign-in" prefetch={false}>
           <IconifyIcon icon="bx:log-out" className="fs-18 align-middle me-1" />
           <span className="align-middle">Logout</span>
         </DropdownItem>

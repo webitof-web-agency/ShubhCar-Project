@@ -417,14 +417,14 @@ export function getDataSourceConfig(path) {
   };
 }
 
-/**
- * Check if using demo data for a domain
- * @param {string} path - dot-notation path, e.g., 'products', 'profile.address'
- * @returns {boolean}
- */
+
+
+
 export const isUsingDemo = (path) => {
   const config = getDataSourceConfig(path);
   return config.source === 'demo';
 };
+
+export const API_BASE_URL = APP_CONFIG.api.baseUrl;
 
 export default APP_CONFIG;

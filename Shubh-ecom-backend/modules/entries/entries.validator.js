@@ -7,7 +7,8 @@ const createEntrySchema = Joi.object({
   message: Joi.string().trim().min(1).max(5000).required(),
   phone: Joi.string()
     .trim()
-    .pattern(/^[0-9+\-()\s]{7,20}$/)
+    .min(7)
+    .max(20)
     .allow('', null),
 });
 
@@ -18,8 +19,8 @@ const listEntriesQuerySchema = Joi.object({
   ),
   page: Joi.number().integer().min(1).default(1),
   status: Joi.string().valid('new', 'read', 'replied'),
-  startDate: Joi.date().iso(),
-  endDate: Joi.date().iso(),
+  startDate: Joi.date().iso().allow('', null),
+  endDate: Joi.date().iso().allow('', null),
   search: Joi.string().trim().max(100).allow(''),
 });
 
