@@ -10,6 +10,7 @@ const PaymentSettingsPage = () => {
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [showSecret, setShowSecret] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     payment_cod_enabled: true,
@@ -140,12 +141,17 @@ const PaymentSettingsPage = () => {
                         </div>
                         <div className="mb-0">
                           <Form.Label>Razorpay Client Secret</Form.Label>
-                          <Form.Control
-                            type="password"
-                            value={formData.razorpay_key_secret}
-                            onChange={(e) => setFormData(prev => ({ ...prev, razorpay_key_secret: e.target.value }))}
-                            placeholder="********"
-                          />
+                          <div className="input-group">
+                            <Form.Control
+                              type={showSecret ? 'text' : 'password'}
+                              value={formData.razorpay_key_secret}
+                              onChange={(e) => setFormData(prev => ({ ...prev, razorpay_key_secret: e.target.value }))}
+                              placeholder="********"
+                            />
+                            <Button variant="outline-secondary" onClick={() => setShowSecret(!showSecret)}>
+                              <IconifyIcon icon={showSecret ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}

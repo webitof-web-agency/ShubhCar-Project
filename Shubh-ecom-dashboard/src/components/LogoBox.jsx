@@ -8,11 +8,11 @@ const LogoBox = () => {
     <div className="logo-box">
       <Link href="/" className="logo-dark">
         <Image src={logoSm} width={28} height={38} className="logo-sm" alt="logo sm" />
-        <Image src={logoDark} height={40} width={180} className="logo-lg" alt="logo dark" />
+        <Image src={logoDark} height={40} width={180} className="logo-lg" alt="logo dark" priority />
       </Link>
       <Link href="/" className="logo-light">
         <Image src={logoSm} width={28} height={38} className="logo-sm" alt="logo sm" />
-        <Image src={logoLight} height={40} width={180} className="logo-lg" alt="logo light" />
+        <Image src={logoLight} height={40} width={180} className="logo-lg" alt="logo light" priority />
       </Link>
     </div>
   )
