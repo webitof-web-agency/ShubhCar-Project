@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const VehicleModelYear = require('../models/VehicleModelYear.model');
 
 class VehicleModelYearsRepo {
@@ -21,8 +22,27 @@ class VehicleModelYearsRepo {
     return VehicleModelYear.findById(id).lean();
   }
 
+  // Bypass pre-find hook to find deleted/non-deleted items
+  findByModelAndYearIncludingDeleted(modelId, year) {
+    return VehicleModelYear.collection.findOne({
+      modelId: new mongoose.Types.ObjectId(modelId),
+      year: year
+    });
+  }
+
   update(id, data) {
     return VehicleModelYear.findByIdAndUpdate(id, data, { new: true });
+  }
+
+  // Bypass pre-find hook to update deleted items
+  async restore(id, data) {
+    const res = await VehicleModelYear.collection.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $set: data },
+      { returnDocument: 'after' }
+    );
+    if (!res) return null;
+    return res.value || res;
   }
 
   softDelete(id) {

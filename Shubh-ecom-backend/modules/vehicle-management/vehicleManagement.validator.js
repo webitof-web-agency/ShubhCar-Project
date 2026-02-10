@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 const baseListQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(200).default(50),
+  limit: Joi.number().integer().min(1).max(1000).default(50),
   search: Joi.string().trim().max(100).allow(''),
   status: Joi.string().valid('active', 'inactive'),
 });

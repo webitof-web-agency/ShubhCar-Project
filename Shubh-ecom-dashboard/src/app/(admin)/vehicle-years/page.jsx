@@ -1,7 +1,7 @@
 'use client'
 import PageTItle from '@/components/PageTItle'
 import { Card, CardBody, Col, Row, Button } from 'react-bootstrap'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
@@ -25,6 +25,10 @@ const VehicleYearsPage = () => {
         { onError: (err) => console.error('Fetch failed:', err) }
     )
 
+    useEffect(() => {
+        fetchYears()
+    }, [])
+
     // Save Operation
     const { execute: saveYear, loading: saving } = useAPI(
         (formData, id) => {
@@ -38,7 +42,11 @@ const VehicleYearsPage = () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ ...formData, year: Number(formData.year) })
-            }).then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to save')))
+            }).then(async res => {
+                if (res.ok) return res.json();
+                const err = await res.json();
+                throw new Error(err.message || 'Failed to save');
+            })
         },
         { 
             showSuccessToast: true, 
@@ -51,7 +59,11 @@ const VehicleYearsPage = () => {
         (id) => fetch(`${API_BASE_URL}/vehicle-years/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${session?.accessToken}` }
-        }).then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to delete'))),
+        }).then(async res => {
+            if (res.ok) return res.json();
+            const err = await res.json();
+            throw new Error(err.message || 'Failed to delete');
+        }),
         { 
             showSuccessToast: true, 
             successMessage: 'Year deleted successfully!' 
@@ -83,7 +95,7 @@ const VehicleYearsPage = () => {
 
     return (
         <>
-            <PageTItle title="VEHICLE MODEL YEARS" />
+            <PageTItle title="VEHICLE YEARS" />
             <Row>
                 <Col xs={12}>
                     <Card>

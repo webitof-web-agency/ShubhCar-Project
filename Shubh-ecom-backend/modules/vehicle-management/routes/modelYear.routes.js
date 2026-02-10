@@ -108,6 +108,7 @@ router.put(
  *     responses:
  *       200: { description: Deleted }
  */
+// router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 
 module.exports = router;

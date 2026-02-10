@@ -38,8 +38,19 @@ class VehicleYearsService {
     if (!payload.year) error('year is required', 400);
     validateYear(year);
 
-    const existing = await repo.findByYear(year);
-    if (existing) error('year already exists', 409);
+    const existing = await repo.findByYearIncludingDeleted(year);
+    
+    if (existing) {
+      if (existing.isDeleted) {
+        // Restore if soft-deleted
+        return repo.restore(existing._id, { 
+          isDeleted: false, 
+          status: payload.status || 'active' 
+        });
+      } else {
+        error('year already exists', 409);
+      }
+    }
 
     return repo.create({ year, status: payload.status || 'active' });
   }

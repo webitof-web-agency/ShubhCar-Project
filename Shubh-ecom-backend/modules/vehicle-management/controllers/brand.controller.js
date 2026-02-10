@@ -9,7 +9,7 @@ exports.list = asyncHandler(async (req, res) => {
 
 exports.create = asyncHandler(async (req, res) => {
   const data = await service.create(req.body);
-  return success(res, data, 'Vehicle brand created');
+  return success(res, data, 'Vehicle brand created', 201);
 });
 
 exports.get = asyncHandler(async (req, res) => {

@@ -19,9 +19,25 @@ class VehicleModelYearsService {
     return { items, total, page, limit };
   }
 
-  create(payload) {
+  async create(payload) {
     if (!payload.modelId) error('modelId is required', 400);
     if (!payload.year) error('year is required', 400);
+    
+    // Check if exists (including deleted) to prevent duplicate key error
+    const existing = await repo.findByModelAndYearIncludingDeleted(payload.modelId, payload.year);
+    
+    if (existing) {
+      if (existing.isDeleted) {
+        // Restore if soft-deleted
+        return repo.restore(existing._id, { 
+          isDeleted: false, 
+          status: payload.status || 'active' 
+        });
+      } else {
+        error('Vehicle model year already exists', 409);
+      }
+    }
+
     return repo.create(payload);
   }
 

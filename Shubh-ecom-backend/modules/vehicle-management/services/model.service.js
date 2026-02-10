@@ -33,6 +33,21 @@ class VehicleModelsService {
       error('Vehicle brand not found', 404);
     }
 
+    // Check for existing model (including deleted)
+    const existing = await vehicleModelsRepo.findByNameAndBrandIncludingDeleted(payload.brandId, payload.name);
+
+    if (existing) {
+      if (existing.isDeleted) {
+        // Restore if soft-deleted
+        return vehicleModelsRepo.restore(existing._id, { 
+          isDeleted: false, 
+          status: payload.status || 'active' 
+        });
+      } else {
+        error('Vehicle model already exists', 409);
+      }
+    }
+
     return vehicleModelsRepo.create(payload);
   }
 
@@ -56,14 +71,22 @@ class VehicleModelsService {
   }
 
   async remove(id) {
-    const linkedYear = await VehicleModelYear.findOne({ modelId: id }).lean();
-    if (linkedYear) {
-      error('Cannot delete model linked to model years', 400);
+    // Cascading soft delete for associated model years
+    const linkedYears = await VehicleModelYear.find({ modelId: id });
+    if (linkedYears.length > 0) {
+      await VehicleModelYear.updateMany(
+        { modelId: id },
+        { $set: { isDeleted: true } }
+      );
     }
 
-    const linkedVehicle = await Vehicle.findOne({ modelId: id }).lean();
-    if (linkedVehicle) {
-      error('Cannot delete model linked to vehicles', 400);
+    // Cascading soft delete for associated vehicles
+    const linkedVehicles = await Vehicle.find({ modelId: id });
+    if (linkedVehicles.length > 0) {
+      await Vehicle.updateMany(
+        { modelId: id },
+        { $set: { isDeleted: true } }
+      );
     }
 
     const model = await vehicleModelsRepo.softDelete(id);

@@ -43,6 +43,7 @@ router.get('/', validate(brandListQuerySchema, 'query'), controller.list);
  *     responses:
  *       201: { description: Created }
  */
+// router.post('/', auth([ROLES.ADMIN]), validate(brandCreateSchema), controller.create);
 router.post('/', auth([ROLES.ADMIN]), validate(brandCreateSchema), controller.create);
 
 /**
@@ -108,6 +109,7 @@ router.put(
  *     responses:
  *       200: { description: Deleted }
  */
+// router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 
 module.exports = router;

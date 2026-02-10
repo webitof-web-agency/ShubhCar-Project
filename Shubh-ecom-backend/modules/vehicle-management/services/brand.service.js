@@ -27,8 +27,24 @@ class VehicleBrandsService {
     if (!payload.logo) error('logo is required', 400);
 
     const name = payload.name.trim();
-    const existing = await repo.findByName(name);
-    if (existing) error('brand already exists', 409);
+
+    // Check for existing brand (including deleted)
+    const existing = await repo.findByNameIncludingDeleted(name);
+
+    if (existing) {
+      if (existing.isDeleted) {
+        // Restore if soft-deleted
+        return repo.restore(existing._id, { 
+          isDeleted: false, 
+          status: payload.status || 'active',
+          description: payload.description || existing.description,
+          logo: payload.logo || existing.logo,
+          slug: payload.slug || existing.slug
+        });
+      } else {
+        error('brand already exists', 409);
+      }
+    }
 
     const slug = payload.slug || slugify(name, { lower: true, strict: true });
 
@@ -79,9 +95,14 @@ class VehicleBrandsService {
     const brand = await repo.findById(id);
     if (!brand || brand.type !== 'vehicle') error('Vehicle brand not found', 404);
 
-    const linkedModel = await VehicleModel.findOne({ brandId: id }).lean();
-    if (linkedModel) {
-      error('Cannot delete brand linked to vehicle models', 400);
+    // Cascading soft delete for associated models
+    const linkedModels = await VehicleModel.find({ brandId: id });
+    if (linkedModels.length > 0) {
+      // Soft delete all linked models
+      await VehicleModel.updateMany(
+        { brandId: id },
+        { $set: { isDeleted: true } }
+      );
     }
 
     const updated = await repo.softDelete(id);

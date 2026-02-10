@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Brand = require('../../../models/Brand.model');
 
 class VehicleBrandsRepo {
@@ -31,6 +32,22 @@ class VehicleBrandsRepo {
 
   softDelete(id) {
     return Brand.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+  }
+
+  // Bypass pre-find hook to find deleted/non-deleted items
+  findByNameIncludingDeleted(name) {
+    return Brand.collection.findOne({ name });
+  }
+
+  // Bypass pre-find hook to update deleted items
+  async restore(id, data) {
+    const res = await Brand.collection.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $set: data },
+      { returnDocument: 'after' }
+    );
+    if (!res) return null;
+    return res.value || res;
   }
 }
 

@@ -41,6 +41,7 @@ router.get('/', validate(yearListQuerySchema, 'query'), controller.list);
  *     responses:
  *       201: { description: Created }
  */
+
 router.post('/', auth([ROLES.ADMIN]), validate(yearCreateSchema), controller.create);
 
 /**
@@ -105,6 +106,7 @@ router.put(
  *     responses:
  *       200: { description: Deleted }
  */
+// router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 router.delete('/:id', auth([ROLES.ADMIN]), validateId('id'), controller.remove);
 
 module.exports = router;

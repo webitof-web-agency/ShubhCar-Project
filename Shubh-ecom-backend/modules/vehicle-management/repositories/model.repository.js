@@ -32,6 +32,27 @@ class VehicleModelsRepo {
       { new: true },
     );
   }
+
+  // Bypass pre-find hook to find deleted/non-deleted items
+  findByNameAndBrandIncludingDeleted(brandId, name) {
+    const mongoose = require('mongoose');
+    return VehicleModel.collection.findOne({
+      brandId: new mongoose.Types.ObjectId(brandId),
+      name: name
+    });
+  }
+
+  // Bypass pre-find hook to update deleted items
+  async restore(id, data) {
+    const mongoose = require('mongoose');
+    const res = await VehicleModel.collection.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $set: data },
+      { returnDocument: 'after' }
+    );
+    if (!res) return null;
+    return res.value || res;
+  }
 }
 
 module.exports = new VehicleModelsRepo();
