@@ -12,6 +12,7 @@ const { scheduleCouponExpiry } = require('./modules/coupons/coupon.cron');
 const {
   startPaymentReconciliationCron,
 } = require('./crons/payment-reconciliation.cron');
+const { startKeepAlive } = require('./services/keepAlive.service');
 const {
   ensureVehicleAttributeDefaults,
 } = require('./modules/vehicle-management/migrations/vehicle-management.seed');
@@ -29,6 +30,7 @@ const start = async () => {
   }
   scheduleCouponExpiry();
   startPaymentReconciliationCron();
+  startKeepAlive();
   await ensureVehicleAttributeDefaults();
   await migrateVariantNameAttribute();
 

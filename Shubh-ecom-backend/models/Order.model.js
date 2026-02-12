@@ -78,6 +78,24 @@ const orderSchema = new mongoose.Schema(
     },
 
     paymentMethod: { type: String, immutable: true },
+    paymentSnapshot: {
+      paymentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Payment',
+      },
+      gateway: { type: String, default: null },
+      gatewayOrderId: { type: String, default: null },
+      transactionId: { type: String, default: null },
+      status: {
+        type: String,
+        enum: ['created', 'success', 'failed', 'refunded', 'pending'],
+        default: 'pending',
+      },
+      amount: { type: Number, default: 0 },
+      currency: { type: String, default: 'INR' },
+      updatedAt: { type: Date, default: null },
+      createdAt: { type: Date, default: null },
+    },
 
     placedAt: { type: Date, default: Date.now },
     shippedAt: { type: Date },

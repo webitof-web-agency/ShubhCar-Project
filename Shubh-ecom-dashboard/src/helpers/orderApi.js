@@ -208,6 +208,19 @@ export const orderAPI = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  /**
+   * Sync payment status from gateway (Razorpay, etc.)
+   * @param {string} paymentId - Payment ID  
+   * @param {string} token - Authentication token
+   */
+  syncPaymentStatus: async (paymentId, token) => {
+    const url = `${API_BASE_URL}/payments/${paymentId}/confirm`;
+    return fetchWithAuth(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 /**

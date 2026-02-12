@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import QuotationButton from '@/components/cart/QuotationButton';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -783,8 +784,15 @@ const Cart = () => {
                   </div>
                 </div>
                 <Link href="/checkout">
-                  <Button className="w-full h-12 rounded-lg text-base font-semibold" size="lg">Proceed to Checkout</Button>
+                  <Button className="w-full h-12 rounded-lg text-base font-semibold mb-3" size="lg">Proceed to Checkout</Button>
                 </Link>
+                <div className="w-full flex justify-center mb-4">
+                    <QuotationButton 
+                        cartItems={items} 
+                        summary={summary} 
+                        profile={user} 
+                    />
+                </div>
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground"><Truck className="w-4 h-4 text-primary shrink-0" /><span>Free Delivery</span></div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground"><Shield className="w-4 h-4 text-primary shrink-0" /><span>Secure Payment</span></div>

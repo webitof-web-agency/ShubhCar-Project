@@ -34,6 +34,7 @@ const schema = Joi.object({
 
   FRONTEND_ORIGIN: Joi.string().uri().default('http://localhost:3000'),
   ADMIN_ORIGIN: Joi.string().uri().default('http://localhost:5173'),
+  BACKEND_ORIGIN: Joi.string().uri().optional(),
 
   TAX_RATE: Joi.number().min(0).max(1).default(0),
   GST_DEFAULT_RATE: Joi.number().min(0).max(1).default(0.18),

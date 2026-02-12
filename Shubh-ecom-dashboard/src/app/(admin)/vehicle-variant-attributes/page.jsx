@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import { toast } from 'react-toastify'
 
 const VehicleVariantAttributesPage = () => {
   const { data: session } = useSession()
@@ -22,6 +23,7 @@ const VehicleVariantAttributesPage = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState({ type: '', id: '' })
+  const [impactedValues, setImpactedValues] = useState([])
 
   const [filterAttributeId, setFilterAttributeId] = useState('')
 
@@ -92,7 +94,7 @@ const VehicleVariantAttributesPage = () => {
   const saveAttribute = async () => {
     if (!session?.accessToken) return
     if (!attributeForm.name) {
-      alert('Please enter attribute name')
+      toast.error('Please enter attribute name')
       return
     }
     const url = editingAttribute
@@ -113,16 +115,17 @@ const VehicleVariantAttributesPage = () => {
       setEditingAttribute(null)
       setAttributeForm({ name: '', type: 'dropdown', status: 'active' })
       fetchAttributes()
+      toast.success('Attribute saved successfully')
     } else {
       const err = await response.json().catch(() => ({}))
-      alert(err?.message || 'Failed to save attribute')
+      toast.error(err?.message || 'Failed to save attribute')
     }
   }
 
   const saveValue = async () => {
     if (!session?.accessToken) return
     if (!valueForm.attributeId || !valueForm.value) {
-      alert('Please select an attribute and enter value')
+      toast.error('Please select an attribute and enter value')
       return
     }
     const url = editingValue
@@ -143,14 +146,21 @@ const VehicleVariantAttributesPage = () => {
       setEditingValue(null)
       setValueForm({ attributeId: '', value: '', status: 'active' })
       fetchValues()
+      toast.success('Value saved successfully')
     } else {
       const err = await response.json().catch(() => ({}))
-      alert(err?.message || 'Failed to save value')
+      toast.error(err?.message || 'Failed to save value')
     }
   }
 
   const requestDelete = (type, id) => {
     setDeleteTarget({ type, id })
+    if (type === 'attribute') {
+      const associated = values.filter((v) => v.attributeId === id)
+      setImpactedValues(associated)
+    } else {
+      setImpactedValues([])
+    }
     setShowDeleteModal(true)
   }
 
@@ -175,9 +185,10 @@ const VehicleVariantAttributesPage = () => {
       }
       setShowDeleteModal(false)
       setDeleteTarget({ type: '', id: '' })
+      toast.success('Deleted successfully')
     } else {
       const err = await response.json().catch(() => ({}))
-      alert(err?.message || 'Failed to delete')
+      toast.error(err?.message || 'Failed to delete')
     }
   }
 
@@ -416,7 +427,17 @@ const VehicleVariantAttributesPage = () => {
           <Modal.Title>Confirm Delete</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete this item?
+          <p>Are you sure you want to delete this item?</p>
+          {impactedValues.length > 0 && (
+            <div className="alert alert-warning mt-3">
+              <div className="fw-bold mb-2">Warning: This will also delete the following {impactedValues.length} values:</div>
+              <ul className="mb-0 ps-3" style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                {impactedValues.map((val) => (
+                  <li key={val._id}>{val.value}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>

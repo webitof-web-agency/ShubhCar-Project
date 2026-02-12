@@ -456,7 +456,7 @@ const CustomerDetails = ({ user, order }) => {
   )
 }
 
-export const PaymentInformation = ({ order, onPaymentUpdate, updatingPayment }) => {
+export const PaymentInformation = ({ order, onPaymentUpdate, updatingPayment, onSyncPayment, syncingPayment }) => {
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
 
@@ -505,6 +505,22 @@ export const PaymentInformation = ({ order, onPaymentUpdate, updatingPayment }) 
             <span>Total: {currency}{Number(order.paymentSummary.totalAmount || 0).toFixed(2)}</span>
             <span>Paid: {currency}{Number(order.paymentSummary.paidAmount || 0).toFixed(2)}</span>
             <span>Remaining: {currency}{Number(order.paymentSummary.remainingAmount || 0).toFixed(2)}</span>
+          </div>
+        )}
+        {order.paymentSnapshot && (
+          <div className="d-flex flex-column gap-1 text-muted fs-12 mb-3">
+            {order.paymentSnapshot.gateway && (
+              <span>Gateway: {String(order.paymentSnapshot.gateway).toUpperCase()}</span>
+            )}
+            {order.paymentSnapshot.gatewayOrderId && (
+              <span>Gateway Order: {order.paymentSnapshot.gatewayOrderId}</span>
+            )}
+            {order.paymentSnapshot.transactionId && (
+              <span>Transaction ID: {order.paymentSnapshot.transactionId}</span>
+            )}
+            {order.paymentSnapshot.status && (
+              <span>Status Snapshot: {order.paymentSnapshot.status}</span>
+            )}
           </div>
         )}
         {isCOD && (
@@ -560,8 +576,34 @@ export const PaymentInformation = ({ order, onPaymentUpdate, updatingPayment }) 
             )}
           </div>
         )}
+        {!isCOD && onSyncPayment && (order.paymentSnapshot?.paymentId || order.paymentSnapshot?.gatewayOrderId || order.paymentSnapshot?.transactionId) && (
+          <div className="mt-3 pt-3 border-top">
+            <p className="text-muted fs-13 mb-2">
+              Verify payment status directly from the gateway.
+            </p>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="w-100"
+              disabled={syncingPayment}
+              onClick={() => onSyncPayment(order._id)}
+            >
+              {syncingPayment ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <IconifyIcon icon="solar:refresh-bold" className="me-2" />
+                  Verify Payment
+                </>
+              )}
+            </Button>
+          </div>
+        )}
         {order.transactionId && (
-          <div className="d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center justify-content-between mt-3">
             <span className="text-muted">Transaction ID</span>
             <span className="font-monospace fs-13">{order.transactionId}</span>
           </div>

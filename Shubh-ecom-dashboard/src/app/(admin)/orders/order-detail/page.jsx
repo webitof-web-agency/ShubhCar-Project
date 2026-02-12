@@ -26,6 +26,7 @@ const OrderDetailPage = () => {
   const [addingNote, setAddingNote] = useState(false);
   const [savingShipment, setSavingShipment] = useState(false);
   const [updatingPayment, setUpdatingPayment] = useState(false);
+  const [syncingPayment, setSyncingPayment] = useState(false);
 
   useEffect(() => {
     if (orderId && session?.accessToken) {
@@ -163,6 +164,55 @@ const OrderDetailPage = () => {
       return false;
     } finally {
       setSavingShipment(false);
+    }
+  };
+
+  const handleSyncPayment = async (orderId) => {
+    if (!session?.accessToken) return false;
+    try {
+      setSyncingPayment(true);
+      
+      // We need to find the payment ID from the payments collection
+      // Orders don't store paymentId directly, so we'll get it from the backend
+      // The payment record is linked to the order via orderId
+      
+      // Call the backend payments API to get payments for this order
+      // For now, we'll use the admin list endpoint with a filter
+      const paymentsResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1'}/payments/admin/list`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        }
+      );
+      
+      if (!paymentsResponse.ok) {
+        throw new Error('Failed to fetch payments');
+      }
+      
+      const paymentsData = await paymentsResponse.json();
+      const payments = paymentsData?.data || [];
+      
+      // Find the payment for this order (most recent if multiple)
+      const payment = payments.find(p => String(p.orderId) === String(orderId));
+      
+      if (!payment) {
+        toast.error('No payment record found for this order');
+        return false;
+      }
+
+      await orderAPI.syncPaymentStatus(payment._id, session.accessToken);
+      toast.success('Payment status synced successfully');
+      await fetchOrderDetail();
+      return true;
+    } catch (error) {
+      console.error('Failed to sync payment:', error);
+      const message = error?.data?.message || error?.message || 'Failed to sync payment status';
+      toast.error(message);
+      return false;
+    } finally {
+      setSyncingPayment(false);
     }
   };
 
@@ -312,6 +362,8 @@ const OrderDetailPage = () => {
                 order={order}
                 onPaymentUpdate={handlePaymentUpdate}
                 updatingPayment={updatingPayment}
+                onSyncPayment={handleSyncPayment}
+                syncingPayment={syncingPayment}
               />
             </Col>
             <Col lg={6}>

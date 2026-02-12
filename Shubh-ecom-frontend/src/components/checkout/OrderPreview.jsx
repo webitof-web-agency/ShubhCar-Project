@@ -29,7 +29,7 @@ export function OrderPreview({
 }) {
   const [resolvedAddress, setResolvedAddress] = useState(null);
   const { accessToken, user } = useAuth();
-  const subtotal = summary?.subtotal ?? 0;
+  const subtotal = summary?.taxableAmount ?? summary?.subtotal ?? 0;
   const discount = summary?.discountAmount ?? 0;
   const tax = summary?.taxAmount ?? 0;
   const shipping = summary?.shippingFee ?? 0;

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL, API_ORIGIN } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import { toast } from 'react-toastify'
 import { mediaAPI } from '@/helpers/mediaApi'
 import DropzoneFormInput from '@/components/form/DropzoneFormInput'
 import MediaPickerModal from '@/components/media/MediaPickerModal'
@@ -85,7 +86,7 @@ const ManufacturerBrandsPage = () => {
             setNewItem(prev => ({ ...prev, logo: logoUrl }))
         } catch (error) {
             console.error(error)
-            alert('Failed to upload image')
+            toast.error('Failed to upload image')
         } finally {
             setUploading(false)
         }
@@ -94,7 +95,7 @@ const ManufacturerBrandsPage = () => {
     const handleSave = async () => {
         if (!session?.accessToken) return
         if (!newItem.name) {
-            alert('Please enter a name')
+            toast.error('Please enter a name')
             return
         }
         try {
@@ -116,12 +117,13 @@ const ManufacturerBrandsPage = () => {
                 setEditingBrand(null)
                 setNewItem({ name: '', description: '', logo: '', type: 'manufacturer', status: 'active' })
                 fetchBrands()
+                toast.success('Brand saved successfully')
             } else {
-                alert('Failed to save brand')
+                toast.error('Failed to save brand')
             }
         } catch (error) {
             console.error(error)
-            alert('Failed to save brand')
+            toast.error('Failed to save brand')
         }
     }
 
@@ -147,12 +149,13 @@ const ManufacturerBrandsPage = () => {
                 fetchBrands()
                 setShowDeleteModal(false)
                 setDeletingId(null)
+                toast.success('Brand deleted successfully')
             } else {
-                alert('Failed to delete')
+                toast.error('Failed to delete')
             }
         } catch (error) {
             console.error(error)
-            alert('Failed to delete')
+            toast.error('Failed to delete')
         }
     }
 

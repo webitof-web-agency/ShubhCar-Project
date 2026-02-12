@@ -13,7 +13,10 @@ const OrderTotals = ({ order }) => {
     grandTotal = 0,
   } = order;
 
-  const finalSubtotal = subtotal || 0;
+  // Calculate Net Subtotal (Taxable Amount)
+  // Logic: Grand Total - Tax - Shipping = Net Subtotal
+  // We prioritize this calculation to ensure the breakdown adds up correctly: Net + Tax + Shipping = Grand Total
+  const finalSubtotal = Math.max(0, grandTotal - taxAmount - shippingFee);
 
   const cgst = Number(taxBreakdown.cgst || 0);
   const sgst = Number(taxBreakdown.sgst || 0);

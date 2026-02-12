@@ -44,12 +44,16 @@ export const getPaymentStatus = async (accessToken, paymentId) => {
   return (await response.json()).data;
 };
 
-export const confirmPayment = async (accessToken, paymentId) => {
+export const confirmPayment = async (accessToken, paymentId, transactionId = null) => {
+  const body = transactionId ? { transactionId } : {};
+  
   const response = await fetch(`${API_BASE}/payments/${paymentId}/confirm`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

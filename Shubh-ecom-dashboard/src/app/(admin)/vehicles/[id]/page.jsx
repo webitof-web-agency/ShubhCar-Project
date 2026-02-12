@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import { API_BASE_URL } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import { toast } from 'react-toastify'
 
 const VehicleDetailPage = () => {
   const { data: session } = useSession()
@@ -52,8 +53,9 @@ const VehicleDetailPage = () => {
 
     if (response.ok) {
       fetchDetail()
+      toast.success('Status updated successfully')
     } else {
-      alert('Failed to update status')
+      toast.error('Failed to update status')
     }
   }
 

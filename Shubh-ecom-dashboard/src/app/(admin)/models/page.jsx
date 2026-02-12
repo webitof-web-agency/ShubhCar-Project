@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { API_BASE_URL, API_ORIGIN } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import { toast } from 'react-toastify'
 import { mediaAPI } from '@/helpers/mediaApi'
 import DropzoneFormInput from '@/components/form/DropzoneFormInput'
 import MediaPickerModal from '@/components/media/MediaPickerModal'
@@ -125,7 +126,7 @@ const ModelsPage = () => {
       setTempImageUrl(imageUrl)
     } catch (error) {
       console.error(error)
-      alert('Failed to upload image')
+      toast.error('Failed to upload image')
     } finally {
       setUploading(false)
     }

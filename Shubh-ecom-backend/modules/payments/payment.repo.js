@@ -137,6 +137,14 @@ class PaymentRepository {
     return Payment.findByIdAndUpdate(id, update, { new: true });
   }
 
+  updateTransactionId(id, transactionId) {
+    return Payment.findByIdAndUpdate(
+      id,
+      { transactionId },
+      { new: true }
+    );
+  }
+
   /* =====================
      FAILURE / CLEANUP
   ====================== */

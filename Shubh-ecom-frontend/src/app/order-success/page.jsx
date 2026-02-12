@@ -7,8 +7,12 @@ import { Card } from '@/components/ui/card';
 import { CheckCircle2, Package, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import APP_CONFIG from '@/config/app.config';
+import { useAuth } from '@/context/AuthContext';
+import { confirmPayment } from '@/services/paymentService';
 
 export default function ThankYouPage() {
+  const { accessToken } = useAuth();
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [orderData] = useState(() => {
     if (typeof window === 'undefined') return null;
     const storedOrderData = sessionStorage.getItem('lastOrder');
@@ -28,10 +32,59 @@ export default function ThankYouPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !accessToken) return;
+    const storedPayment = sessionStorage.getItem('lastPayment');
+    if (!storedPayment) return;
+
+    let paymentData = null;
+    try {
+      paymentData = JSON.parse(storedPayment);
+    } catch (err) {
+      console.error('[ORDER_SUCCESS] Failed to parse lastPayment:', err);
+      return;
+    }
+
+    if (!paymentData?.paymentId) return;
+
+    setVerifyingPayment(true);
+    let cancelled = false;
+
+    const retryConfirm = async () => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        if (cancelled) return;
+        try {
+          const confirmation = await confirmPayment(accessToken, paymentData.paymentId);
+          const status = confirmation?.status || '';
+          if (status === 'success') {
+            sessionStorage.removeItem('lastPayment');
+            setVerifyingPayment(false);
+            return;
+          }
+        } catch (err) {
+          console.error('[ORDER_SUCCESS] Retry confirm failed:', err);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      setVerifyingPayment(false);
+    };
+
+    retryConfirm();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="max-w-2xl mx-auto">
+          {verifyingPayment && (
+            <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+              Verifying payment with gateway… this can take a few seconds.
+            </div>
+          )}
           {/* Success Animation */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-success/10 mb-4 animate-in zoom-in duration-300">

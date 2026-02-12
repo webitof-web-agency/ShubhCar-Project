@@ -1,6 +1,7 @@
 'use client'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import { Alert, Button, Card, CardFooter, CardTitle, Col, Form, Modal, Row, Spinner } from 'react-bootstrap'
+import { toast } from 'react-toastify'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { inventoryAPI } from '@/helpers/inventoryApi'
@@ -72,7 +73,7 @@ const WarehouseList = ({ filters = {}, onInventoryChange }) => {
     if (!editingItem || !session?.accessToken) return
     const qty = Number(adjustQty)
     if (!qty || qty <= 0) {
-      alert('Please enter a quantity greater than 0')
+      toast.error('Please enter a quantity greater than 0')
       return
     }
 
@@ -98,8 +99,9 @@ const WarehouseList = ({ filters = {}, onInventoryChange }) => {
 
       closeEditModal()
       fetchProducts()
+      toast.success('Stock updated successfully')
     } catch (err) {
-      alert(err?.message || 'Failed to update stock')
+      toast.error(err?.message || 'Failed to update stock')
     }
   }
 

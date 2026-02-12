@@ -79,10 +79,11 @@ class VehicleAttributesService {
   }
 
   async remove(id) {
-    const value = await VehicleAttributeValue.findOne({ attributeId: id }).lean();
-    if (value) {
-      error('Cannot delete attribute with values', 400);
-    }
+    // Cascading soft delete for associated values
+    await VehicleAttributeValue.updateMany(
+      { attributeId: id },
+      { $set: { isDeleted: true } }
+    );
 
     const linkedVehicle = await Vehicle.findOne({
       attributeValueIds: { $exists: true, $ne: [] },

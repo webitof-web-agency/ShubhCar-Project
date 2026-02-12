@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { API_BASE_URL } from '@/helpers/apiBase'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import Link from 'next/link'
+import { toast } from 'react-toastify'
 
 const VehiclesPage = () => {
   const { data: session } = useSession()
@@ -168,19 +169,19 @@ const VehiclesPage = () => {
   const handleSave = async () => {
     if (!session?.accessToken) return
     if (!vehicleForm.brandId || !vehicleForm.modelId || !vehicleForm.yearId) {
-      alert('Please select brand, model, and year')
+      toast.error('Please select brand, model, and year')
       return
     }
 
     const trimmedVariantName = String(vehicleForm.variantName || '').trim()
     if (!trimmedVariantName) {
-      alert('Please enter a variant name')
+      toast.error('Please enter a variant name')
       return
     }
 
     const attributeValueIds = Object.values(attributeSelections).filter(Boolean)
     if (!attributeValueIds.length) {
-      alert('Please select at least one variant attribute value')
+      toast.error('Please select at least one variant attribute value')
       return
     }
 
@@ -209,9 +210,10 @@ const VehiclesPage = () => {
       setVehicleForm({ brandId: '', modelId: '', yearId: '', variantName: '', status: 'active' })
       setAttributeSelections({})
       fetchVehicles()
+      toast.success('Vehicle saved successfully')
     } else {
       const err = await response.json().catch(() => ({}))
-      alert(err?.message || 'Failed to save vehicle')
+      toast.error(err?.message || 'Failed to save vehicle')
     }
   }
 
@@ -228,8 +230,9 @@ const VehiclesPage = () => {
 
     if (response.ok) {
       fetchVehicles()
+      toast.success('Status updated successfully')
     } else {
-      alert('Failed to update status')
+      toast.error('Failed to update status')
     }
   }
 

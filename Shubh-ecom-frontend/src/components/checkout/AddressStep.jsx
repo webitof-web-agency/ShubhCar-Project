@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -321,7 +322,12 @@ export function AddressStep({ onNext, initialAddressId }) {
         )}
 
         {!isCreatingNew && (
-          <div className="flex justify-end mt-6">
+          <div className="flex flex-col-reverse md:flex-row justify-between mt-6 gap-3">
+            <Link href="/cart" className="w-full md:w-auto">
+              <Button variant="outline" className="w-full" type="button">
+                Back to Cart
+              </Button>
+            </Link>
             <Button
               onClick={handleNext}
               size="lg"

@@ -136,18 +136,20 @@ const InvoiceSettings = () => {
   }
 
 
-  const handleSave = async (overrides = {}) => {
+  const handleSave = async (overrides = {}, skipValidation = false) => {
     if (!session?.accessToken) return
 
-    // Validate GSTIN before saving
-    const gstinValidation = validateGSTIN(formData.invoice_company_gstin)
-    if (!gstinValidation.valid) {
-      setGstinError(gstinValidation.message)
-      toast.error(gstinValidation.message)
-      setActiveTab('company') // Switch to company tab to show error
-      return
+    // Only validate GSTIN for full saves, not for counter resets
+    if (!skipValidation) {
+      const gstinValidation = validateGSTIN(formData.invoice_company_gstin)
+      if (!gstinValidation.valid) {
+        setGstinError(gstinValidation.message)
+        toast.error(gstinValidation.message)
+        setActiveTab('company') // Switch to company tab to show error
+        return
+      }
+      setGstinError('') // Clear any previous error
     }
-    setGstinError('') // Clear any previous error
 
     setSaving(true)
     try {
@@ -270,7 +272,7 @@ const InvoiceSettings = () => {
                         <Button
                           size="sm"
                           variant="outline-secondary"
-                          onClick={() => handleSave({ order_number_next: Number(formData.order_number_start || 1) })}
+                          onClick={() => handleSave({ order_number_next: Number(formData.order_number_start || 1) }, true)}
                           disabled={saving}
                         >
                           Reset Counter
@@ -320,7 +322,7 @@ const InvoiceSettings = () => {
                         <Button
                           size="sm"
                           variant="outline-secondary"
-                          onClick={() => handleSave({ invoice_number_next: Number(formData.invoice_number_start || 1) })}
+                          onClick={() => handleSave({ invoice_number_next: Number(formData.invoice_number_start || 1) }, true)}
                           disabled={saving}
                         >
                           Reset Counter

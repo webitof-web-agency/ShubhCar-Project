@@ -29,7 +29,8 @@ const InvoiceTemplate = forwardRef(({ order, items = [], address, settings = {} 
     year: 'numeric',
   }) : 'N/A';
 
-  const subtotal = order.subtotal || 0;
+  // Display taxable amount as subtotal for consistency with cart/checkout
+  const subtotal = order.taxableAmount || (Math.max(0, (order.grandTotal || 0) - (order.shippingFee || 0) - (order.taxAmount || 0))) || 0;
   const discount = order.discountAmount || 0;
   const taxAmount = order.taxAmount || 0;
   const shippingFee = order.shippingFee || 0;
@@ -127,7 +128,12 @@ const InvoiceTemplate = forwardRef(({ order, items = [], address, settings = {} 
                 </td>
                 <td className="py-2.5 px-3 text-center text-xs text-gray-600">{item.quantity}</td>
                 <td className="py-2.5 px-3 text-right text-xs text-gray-600 whitespace-nowrap">{formatPrice(item.price || 0)}</td>
-                <td className="py-2.5 px-3 text-right text-xs text-gray-600 whitespace-nowrap">{formatPrice(item.taxAmount || 0)}</td>
+                <td className="py-2.5 px-3 text-right text-xs text-gray-600 whitespace-nowrap">
+                  {formatPrice(item.taxAmount || 0)}
+                  <span className="text-[10px] text-gray-400 block">
+                    ({item.taxPercent || 0}%)
+                  </span>
+                </td>
                 <td className="py-2.5 px-3 text-right text-xs font-medium text-gray-900 whitespace-nowrap">{formatPrice(item.total || 0)}</td>
               </tr>
             ))}
@@ -148,10 +154,7 @@ const InvoiceTemplate = forwardRef(({ order, items = [], address, settings = {} 
                 <span>-{formatPrice(discount)}</span>
               </div>
             )}
-            <div className="flex justify-between py-1.5">
-              <span className="text-gray-600">Taxable Amount</span>
-              <span className="font-medium">{formatPrice(taxableAmount)}</span>
-            </div>
+
             {formatTaxBreakdown(taxBreakdown).map((component) => (
               <div key={component.key} className="flex justify-between py-1.5">
                 <span className="text-gray-600">{component.label}</span>

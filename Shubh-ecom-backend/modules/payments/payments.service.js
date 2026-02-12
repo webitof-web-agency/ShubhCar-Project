@@ -131,6 +131,19 @@ class PaymentsService {
         session,
       );
 
+      order.paymentSnapshot = {
+        paymentId: payment._id,
+        gateway,
+        gatewayOrderId,
+        transactionId: null,
+        status: PAYMENT_RECORD_STATUS.CREATED,
+        amount: payment.amount,
+        currency: payment.currency || 'INR',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      await order.save({ session });
+
       await session.commitTransaction();
 
       log.info('payment_intent_created', {
@@ -259,7 +272,7 @@ class PaymentsService {
     return payments;
   }
 
-  async confirmPayment(paymentId, user) {
+  async confirmPayment(paymentId, user, transactionId = null) {
     const payment = await paymentRepo.findById(paymentId);
     if (!payment) {
       error('Payment not found', 404, 'PAYMENT_NOT_FOUND');
@@ -275,8 +288,20 @@ class PaymentsService {
       error('Access denied', 403, 'FORBIDDEN');
     }
 
+    // If transactionId is provided and payment doesn't have one, update it
+    if (transactionId && !payment.transactionId) {
+      console.log('[CONFIRM_PAYMENT] Updating transactionId:', transactionId);
+      await paymentRepo.updateTransactionId(payment._id, transactionId);
+      // Refresh payment object with new transactionId
+      payment.transactionId = transactionId;
+    }
+
+    console.log('[CONFIRM_PAYMENT] Fetching status from gateway for payment:', payment._id, 'transactionId:', payment.transactionId);
+
     const gatewayStatus = await paymentGatewayService.fetchStatus(payment);
+    console.log('[CONFIRM_PAYMENT] Gateway status response:', gatewayStatus);
     if (!gatewayStatus) {
+      console.log('[CONFIRM_PAYMENT] No gateway status returned, exiting early');
       return {
         paymentId: payment._id,
         status: payment.status,
@@ -286,6 +311,7 @@ class PaymentsService {
     }
 
     const normalized = gatewayStatus.status;
+    console.log('[CONFIRM_PAYMENT] Normalized status:', normalized);
 
     if (normalized === 'success') {
       if (payment.status !== PAYMENT_RECORD_STATUS.SUCCESS) {
@@ -307,6 +333,20 @@ class PaymentsService {
       await paymentRepo.finalizeRefund(payment._id, Boolean(gatewayStatus.fullRefund));
       await orderService.markRefunded(order._id, Boolean(gatewayStatus.fullRefund));
     }
+
+    await orderRepo.updateById(order._id, {
+      paymentSnapshot: {
+        paymentId: payment._id,
+        gateway: payment.paymentGateway,
+        gatewayOrderId: payment.gatewayOrderId || null,
+        transactionId: gatewayStatus.transactionId || payment.transactionId || null,
+        status: normalized,
+        amount: payment.amount,
+        currency: payment.currency || 'INR',
+        createdAt: order.paymentSnapshot?.createdAt || payment.createdAt || new Date(),
+        updatedAt: new Date(),
+      },
+    });
 
     const refreshedOrder = await orderRepo.findById(order._id);
 

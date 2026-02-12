@@ -28,8 +28,21 @@ if (!queuesEnabled) {
     if (!payment) return;
 
     if (type === 'payment_intent.succeeded') {
-      await paymentRepo.markSuccess(payment._id, {
+      const updatedPayment = await paymentRepo.markSuccess(payment._id, {
         transactionId: object?.id,
+      });
+      await orderRepo.updateById(payment.orderId, {
+        paymentSnapshot: {
+          paymentId: payment._id,
+          gateway: updatedPayment.paymentGateway,
+          gatewayOrderId: updatedPayment.gatewayOrderId || null,
+          transactionId: updatedPayment.transactionId || object?.id || null,
+          status: PAYMENT_RECORD_STATUS.SUCCESS,
+          amount: updatedPayment.amount,
+          currency: updatedPayment.currency || 'INR',
+          createdAt: updatedPayment.createdAt || new Date(),
+          updatedAt: new Date(),
+        },
       });
       const order = await orderRepo.findById(orderId);
       if (order) {
@@ -46,7 +59,20 @@ if (!queuesEnabled) {
           : 0;
       const isFullRefund = refundedAmount >= (payment.amount || 0);
       const order = await orderRepo.findById(orderId);
-      await paymentRepo.finalizeRefund(payment._id, isFullRefund);
+      const updatedPayment = await paymentRepo.finalizeRefund(payment._id, isFullRefund);
+      await orderRepo.updateById(payment.orderId, {
+        paymentSnapshot: {
+          paymentId: payment._id,
+          gateway: updatedPayment.paymentGateway,
+          gatewayOrderId: updatedPayment.gatewayOrderId || null,
+          transactionId: updatedPayment.transactionId || object?.id || null,
+          status: PAYMENT_RECORD_STATUS.REFUNDED,
+          amount: updatedPayment.amount,
+          currency: updatedPayment.currency || 'INR',
+          createdAt: updatedPayment.createdAt || new Date(),
+          updatedAt: new Date(),
+        },
+      });
       if (order) {
         await orderService.markRefunded(orderId, isFullRefund);
         await creditNoteService.generateFromOrder(order);
@@ -70,9 +96,22 @@ if (!queuesEnabled) {
       }
       if (!payment) return;
       if (payment.status === PAYMENT_RECORD_STATUS.SUCCESS) return;
-      await paymentRepo.markSuccess(payment._id, {
+      const updatedPayment = await paymentRepo.markSuccess(payment._id, {
         transactionId: paymentId || payment.transactionId,
         gatewayResponse: paymentEntity,
+      });
+      await orderRepo.updateById(payment.orderId, {
+        paymentSnapshot: {
+          paymentId: payment._id,
+          gateway: updatedPayment.paymentGateway,
+          gatewayOrderId: updatedPayment.gatewayOrderId || null,
+          transactionId: updatedPayment.transactionId || paymentId || null,
+          status: PAYMENT_RECORD_STATUS.SUCCESS,
+          amount: updatedPayment.amount,
+          currency: updatedPayment.currency || 'INR',
+          createdAt: updatedPayment.createdAt || new Date(),
+          updatedAt: new Date(),
+        },
       });
       const order = await orderRepo.findById(payment.orderId);
       if (order) {
@@ -92,7 +131,20 @@ if (!queuesEnabled) {
       if (!payment) return;
       const isFullRefund = refundAmount >= (payment.amount || 0);
       const order = await orderRepo.findById(payment.orderId);
-      await paymentRepo.finalizeRefund(payment._id, isFullRefund);
+      const updatedPayment = await paymentRepo.finalizeRefund(payment._id, isFullRefund);
+      await orderRepo.updateById(payment.orderId, {
+        paymentSnapshot: {
+          paymentId: payment._id,
+          gateway: updatedPayment.paymentGateway,
+          gatewayOrderId: updatedPayment.gatewayOrderId || null,
+          transactionId: updatedPayment.transactionId || paymentId || null,
+          status: PAYMENT_RECORD_STATUS.REFUNDED,
+          amount: updatedPayment.amount,
+          currency: updatedPayment.currency || 'INR',
+          createdAt: updatedPayment.createdAt || new Date(),
+          updatedAt: new Date(),
+        },
+      });
       if (order) {
         await orderService.markRefunded(payment.orderId, isFullRefund);
         await creditNoteService.generateFromOrder(order);
@@ -111,7 +163,20 @@ if (!queuesEnabled) {
         payment = await paymentRepo.findByGatewayOrderIdLean(gatewayOrderId);
       }
       if (!payment) return;
-      await paymentRepo.markFailed(payment._id, { reason: 'gateway_failure' });
+      const updatedPayment = await paymentRepo.markFailed(payment._id, { reason: 'gateway_failure' });
+      await orderRepo.updateById(payment.orderId, {
+        paymentSnapshot: {
+          paymentId: payment._id,
+          gateway: updatedPayment.paymentGateway,
+          gatewayOrderId: updatedPayment.gatewayOrderId || null,
+          transactionId: updatedPayment.transactionId || paymentId || null,
+          status: PAYMENT_RECORD_STATUS.FAILED,
+          amount: updatedPayment.amount,
+          currency: updatedPayment.currency || 'INR',
+          createdAt: updatedPayment.createdAt || new Date(),
+          updatedAt: new Date(),
+        },
+      });
       await orderService.failOrder(payment.orderId);
     }
   };

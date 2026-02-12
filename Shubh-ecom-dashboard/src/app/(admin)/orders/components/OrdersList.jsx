@@ -1255,7 +1255,8 @@ const OrdersList = ({ initialShowCreate = false, hideList = false } = {}) => {
                     ) : (
                       ordersData.map((order, idx) => {
                           const statusBadge = getStatusBadge(order.orderStatus);
-                          const paymentBadge = getPaymentStatusBadge(order.paymentStatus);
+                            const paymentBadge = getPaymentStatusBadge(order.paymentStatus);
+                            const gatewayPaymentId = order.paymentSnapshot?.transactionId || '';
                           const customerName = order.userId
                             ? `${order.userId.firstName || ''} ${order.userId.lastName || ''}`.trim() || 'Guest User'
                             : 'Guest User';
@@ -1280,7 +1281,12 @@ const OrdersList = ({ initialShowCreate = false, hideList = false } = {}) => {
                                 />
                               </td>
                               <td className="py-3">
-                                <span className="fw-bold text-primary fs-13">#{order.orderNumber || order._id?.substring(0, 8).toUpperCase()}</span>
+                                  <span className="fw-bold text-primary fs-13">#{order.orderNumber || order._id?.substring(0, 8).toUpperCase()}</span>
+                                  {gatewayPaymentId && (
+                                    <div className="text-muted small mt-1">
+                                      Txn: <span className="font-monospace">{gatewayPaymentId}</span>
+                                    </div>
+                                  )}
                                 {hoveredOrderId === order._id && (
                                   <div className="d-flex align-items-center gap-2 text-muted small mt-2">
                                     <div

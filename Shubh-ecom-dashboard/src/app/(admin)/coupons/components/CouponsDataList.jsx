@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import Link from 'next/link'
 import { Card, CardFooter, CardTitle, Col, Row, Spinner, Alert, Badge, Form } from 'react-bootstrap'
+import { toast } from 'react-toastify'
 import couponService from '@/services/couponService'
 import { currency } from '@/context/constants'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
@@ -54,8 +55,9 @@ const CouponsDataList = ({ coupons = [], setCoupons, loading = false }) => {
       setCoupons(coupons.filter(c => c._id !== couponToDelete._id))
       setShowDeleteModal(false)
       setCouponToDelete(null)
+      toast.success('Coupon deleted successfully')
     } catch (err) {
-      alert(err.message || 'Failed to delete coupon')
+      toast.error(err.message || 'Failed to delete coupon')
     } finally {
       setDeleting(null)
     }
@@ -92,8 +94,9 @@ const CouponsDataList = ({ coupons = [], setCoupons, loading = false }) => {
       setCoupons(coupons.map(c => 
         c._id === couponId ? { ...c, isActive: !currentStatus } : c
       ))
+      toast.success('Status updated successfully')
     } catch (err) {
-      alert(err.message || 'Failed to update status')
+      toast.error(err.message || 'Failed to update status')
     }
   }
 

@@ -61,6 +61,7 @@ exports.confirmPayment = asyncHandler(async (req, res) => {
   const data = await paymentService.confirmPayment(
     req.params.paymentId,
     req.user,
+    req.body.transactionId, // Pass Razorpay payment ID from frontend
   );
   audit.log({
     actor: { id: req.user?.id, role: req.user?.role || 'unknown' },
